@@ -15,7 +15,8 @@ public class Product {
     private final UnitOfMeasure unit;
     private final Set<Allergen> allergens;
 
-    public Product(UUID id, String name, String description, Category category, UnitOfMeasure unit, Set<Allergen> allergens) {
+    public Product(UUID id, String name, String description, Category category,
+                   UnitOfMeasure unit, Set<Allergen> allergens) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -24,7 +25,8 @@ public class Product {
         this.allergens = allergens;
     }
 
-    public static Product create(String name, String description, Category category, UnitOfMeasure unit, Set<Allergen> allergens) {
+    public static Product create(String name, String description, Category category,
+                                 UnitOfMeasure unit, Set<Allergen> allergens) {
         return new Product(
                 UUID.randomUUID(),
                 name,
@@ -38,23 +40,18 @@ public class Product {
     public UUID getId() {
         return id;
     }
-
     public String getName() {
         return name;
     }
-
     public String getDescription() {
         return description;
     }
-
     public Category getCategory() {
         return category;
     }
-
     public UnitOfMeasure getUnit() {
         return unit;
     }
-
     public Set<Allergen> getAllergens() {
         return allergens;
     }

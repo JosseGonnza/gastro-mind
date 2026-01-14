@@ -48,5 +48,13 @@ public class BatchTest {
         assertThat(unitCost.currency()).isEqualTo(PURCHASE_PRICE.currency());
     }
 
+    @Test
+    @DisplayName("Reducir el stock al consumir")
+    void shouldReduceStockWhenConsuming() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
 
+        batch.consume(Quantity.of(5.0));
+
+        assertThat(batch.getCurrentQuantity().value()).isEqualTo(20.0);
+    }
 }

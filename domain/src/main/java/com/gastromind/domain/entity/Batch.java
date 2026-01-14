@@ -52,6 +52,11 @@ public class Batch {
         return new Money(unitCost, purchasePrice.currency());
     }
 
+    public void consume(Quantity amountToConsume) {
+        if (amountToConsume.value() <= 0) throw new IllegalArgumentException("Quantity cannot be zero or less");
+        this.currentQuantity = this.currentQuantity.subtract(amountToConsume);
+    }
+
     public UUID getId() {
         return id;
     }

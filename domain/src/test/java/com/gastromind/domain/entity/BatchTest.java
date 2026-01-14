@@ -29,8 +29,8 @@ public class BatchTest {
         Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
 
         assertThat(batch.getId()).isNotNull();
-        assertThat(batch.getSku()).isEquals(SKU);
-        assertThat(batch.getCurrentQuantity().value()).isEquals(25.0);
+        assertThat(batch.getSku()).isEqualTo(SKU);
+        assertThat(batch.getCurrentQuantity().value()).isEqualTo(25.0);
         assertThat(batch.getEntryDate()).isToday();
     }
 }

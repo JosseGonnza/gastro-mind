@@ -4,6 +4,7 @@ import com.gastromind.domain.valueobject.Allergen;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.UnitOfMeasure;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,12 +18,18 @@ public class Product {
 
     public Product(UUID id, String name, String description, Category category,
                    UnitOfMeasure unit, Set<Allergen> allergens) {
+        //Mejor IAE que NPE por semántica en el dominio
+        if (id == null) throw new IllegalArgumentException("Product id cannot be null");
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Product name cannot be empty");
+        if (category == null) throw new IllegalArgumentException("Category cannot be null");
+        if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
         this.id = id;
         this.name = name;
         this.description = description;
         this.category = category;
         this.unit = unit;
-        this.allergens = allergens;
+        //Hago una copia y aseguro la inmutabilidad al crearse
+        this.allergens = allergens != null ? Set.copyOf(allergens) : Collections.emptySet();
     }
 
     public static Product create(String name, String description, Category category,

@@ -14,6 +14,7 @@ public class Product {
     private final String description;
     private final Category category;
     private final UnitOfMeasure unit;
+    //Set no tiene duplicidades, mejor que List para manejar la unicidad
     private final Set<Allergen> allergens;
 
     public Product(UUID id, String name, String description, Category category,

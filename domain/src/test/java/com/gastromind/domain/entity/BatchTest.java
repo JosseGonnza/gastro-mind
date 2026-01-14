@@ -4,6 +4,7 @@ import com.gastromind.domain.valueobject.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -33,4 +34,19 @@ public class BatchTest {
         assertThat(batch.getCurrentQuantity().value()).isEqualTo(25.0);
         assertThat(batch.getEntryDate()).isToday();
     }
+
+    @Test
+    @DisplayName("Calcular el coste unitario Precio/Cantidad")
+    void shouldCalculateUnitCost() {
+        //50€ / 25kg = 2€/Kg
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        Money unitCost = batch.getUnitCost();
+
+        //isEqualByComparingTo no diferencia entre 2.0 y 2.00 (Mejor que isEqualTo)
+        assertThat(unitCost.amount()).isEqualByComparingTo(new BigDecimal("2.00"));
+        assertThat(unitCost.currency()).isEqualTo(PURCHASE_PRICE.currency());
+    }
+
+
 }

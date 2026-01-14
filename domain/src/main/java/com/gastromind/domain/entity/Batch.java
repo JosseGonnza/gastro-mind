@@ -3,7 +3,9 @@ package com.gastromind.domain.entity;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.UUID;
 
 public class Batch {
@@ -38,6 +40,16 @@ public class Batch {
                 purchasePrice,
                 initialQuantity
         );
+    }
+
+    public Money getUnitCost() {
+        if (initialQuantity.value() == 0) {
+            return Money.of(0);
+        }
+        BigDecimal totalCost = purchasePrice.amount();
+        BigDecimal originalQuantity = Money.of(initialQuantity.value()).amount();
+        BigDecimal unitCost = totalCost.divide(originalQuantity, 2);
+        return new Money(unitCost, purchasePrice.currency());
     }
 
     public UUID getId() {

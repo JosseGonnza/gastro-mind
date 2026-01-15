@@ -1,0 +1,81 @@
+package com.gastromind.domain.entity;
+
+import com.gastromind.domain.valueobject.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@DisplayName("Batch debería")
+public class BatchTest {
+
+    private static final Product PRODUCT = Product.create(
+            "Harina",
+            "Harina de Trigo",
+            Category.GRAIN,
+            UnitOfMeasure.KILOGRAM,
+            Set.of(Allergen.GLUTEN));
+    private static final String SKU = "LOT-2026-001";
+    private static final LocalDate EXPIRATION_DATE = LocalDate.now().plusMonths(6);
+    private static final Money PURCHASE_PRICE = Money.of(50.00);
+    private static final Quantity INITIAL_QUANTITY = Quantity.of(25.0);
+
+    @Test
+    @DisplayName("Crear un lote válido con stock inicial igual que el actual")
+    void shouldCreateValidBatch() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        assertThat(batch.getId()).isNotNull();
+        assertThat(batch.getSku()).isEqualTo(SKU);
+        assertThat(batch.getCurrentQuantity().value()).isEqualTo(25.0);
+        assertThat(batch.getEntryDate()).isToday();
+    }
+
+    @Test
+    @DisplayName("Calcular el coste unitario Precio/Cantidad")
+    void shouldCalculateUnitCost() {
+        //50€ / 25kg = 2€/Kg
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        Money unitCost = batch.getUnitCost();
+
+        //isEqualByComparingTo no diferencia entre 2.0 y 2.00 (Mejor que isEqualTo)
+        assertThat(unitCost.amount()).isEqualByComparingTo(new BigDecimal("2.00"));
+        assertThat(unitCost.currency()).isEqualTo(PURCHASE_PRICE.currency());
+    }
+
+    @Test
+    @DisplayName("Reducir el stock al consumir")
+    void shouldReduceStockWhenConsuming() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        batch.consume(Quantity.of(5.0));
+
+        assertThat(batch.getCurrentQuantity().value()).isEqualTo(20.0);
+    }
+
+    @Test
+    @DisplayName("Lanzar error si intentamos consumir más de lo que hay")
+    void shouldThrowExceptionWhenOverConsuming() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        assertThatThrownBy(() -> batch.consume(Quantity.of(30.0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Not enough quantity available");
+    }
+
+    @Test
+    @DisplayName("No permitir crear lotes ya caducados")
+    void shouldThrowExceptionWhenIfExpired() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+
+        assertThatThrownBy(() -> Batch.create(PRODUCT, SKU, yesterday, PURCHASE_PRICE, INITIAL_QUANTITY))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot accept expired products");
+    }
+}

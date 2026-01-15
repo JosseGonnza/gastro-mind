@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Batch debería")
 public class BatchTest {
@@ -56,5 +57,25 @@ public class BatchTest {
         batch.consume(Quantity.of(5.0));
 
         assertThat(batch.getCurrentQuantity().value()).isEqualTo(20.0);
+    }
+
+    @Test
+    @DisplayName("Lanzar error si intentamos consumir más de lo que hay")
+    void shouldThrowExceptionWhenOverConsuming() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        assertThatThrownBy(() -> batch.consume(Quantity.of(30.0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Not enough quantity available");
+    }
+
+    @Test
+    @DisplayName("No permitir crear lotes ya caducados")
+    void shouldThrowExceptionWhenIfExpired() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+
+        assertThatThrownBy(() -> Batch.create(PRODUCT, SKU, yesterday, PURCHASE_PRICE, INITIAL_QUANTITY))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot accept expired products");
     }
 }

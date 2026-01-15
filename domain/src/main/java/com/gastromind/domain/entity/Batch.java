@@ -4,8 +4,8 @@ import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.Currency;
 import java.util.UUID;
 
 public class Batch {
@@ -20,6 +20,15 @@ public class Batch {
     private  Quantity currentQuantity;
 
     private Batch(UUID id, Product product, String sku, LocalDate entryDate, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
+        //TODO: Sacamos validaciones a un método?
+        if (id == null) throw new IllegalArgumentException("Batch ID cannot be null");
+        if (product == null) throw new IllegalArgumentException("Product cannot be null");if (sku == null || sku.isBlank()) throw new IllegalArgumentException("SKU cannot be empty");
+        if (purchasePrice == null) throw new IllegalArgumentException("Price cannot be null");
+        if (initialQuantity == null) throw new IllegalArgumentException("Initial quantity cannot be null");
+        if (expirationDate == null) throw new IllegalArgumentException("Expiration date cannot be null");
+        if (expirationDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot accept expired products");
+        }
         this.id = id;
         this.product = product;
         this.sku = sku;
@@ -47,8 +56,8 @@ public class Batch {
             return Money.of(0);
         }
         BigDecimal totalCost = purchasePrice.amount();
-        BigDecimal originalQuantity = Money.of(initialQuantity.value()).amount();
-        BigDecimal unitCost = totalCost.divide(originalQuantity, 2);
+        BigDecimal originalQuantity = BigDecimal.valueOf(initialQuantity.value());
+        BigDecimal unitCost = totalCost.divide(originalQuantity, 2, RoundingMode.HALF_EVEN);
         return new Money(unitCost, purchasePrice.currency());
     }
 

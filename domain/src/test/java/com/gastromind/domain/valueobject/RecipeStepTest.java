@@ -16,7 +16,7 @@ class RecipeStepTest {
 
         var step = new RecipeStep(stepNumber, description);
 
-        assertThat(step.getStepNumbre()).isEqualTo(stepNumber);
-        assertThat(step.getDescription()).isEqualTo(description);
+        assertThat(step.stepNumber()).isEqualTo(stepNumber);
+        assertThat(step.description()).isEqualTo(description);
     }
 }

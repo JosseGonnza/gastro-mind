@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Product debería")
-public class ProductTest {
+class ProductTest {
 
     private static final UUID VALID_ID = UUID.randomUUID();
     private static final String VALID_NAME = "Arroz Bomba";

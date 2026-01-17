@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Batch debería")
-public class BatchTest {
+class BatchTest {
 
     private static final Product PRODUCT = Product.create(
             "Harina",

@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("RecipeIngredient debería")
-public class RecipeIngredientTest {
+class RecipeIngredientTest {
 
     private static final Product rice = Product.create(
             "Arroz Bomba",

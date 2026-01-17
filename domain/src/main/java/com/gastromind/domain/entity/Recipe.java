@@ -21,9 +21,7 @@ public class Recipe {
     private final List<RecipeStep> steps;
 
     private Recipe(UUID id, String name, String description, Duration cookingTime, Difficulty difficult, int portions) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Name cannot be empty");
-        }
+        validateInvariants(name, cookingTime, difficult, portions);
         this.id = id;
         this.name = name;
         this.description = description;
@@ -43,6 +41,42 @@ public class Recipe {
                 cookingTime,
                 difficult,
                 portions);
+    }
+
+    public void addIngredient(RecipeIngredient ingredient) {
+        if (ingredient == null) {
+            throw new IllegalArgumentException("Ingredient cannot be null");
+        }
+        if (isAnyMatch(ingredient)) {
+            throw new IllegalArgumentException("Product already exists in recipe");
+        }
+        ingredients.add(ingredient);
+    }
+
+    public void addStep(RecipeStep step) {
+        if (step == null) {
+            throw new IllegalArgumentException("Step cannot be null");
+        }
+        steps.add(step);
+    }
+
+    private boolean isAnyMatch(RecipeIngredient ingredient) {
+        return ingredients.stream().anyMatch(i -> i.product().equals(ingredient.product()));
+    }
+
+    private static void validateInvariants(String name, Duration cookingTime, Difficulty difficult, int portions) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        if (cookingTime == null) {
+            throw new IllegalArgumentException("Cooking time cannot be null");
+        }
+        if (difficult == null) {
+            throw new IllegalArgumentException("Difficulty cannot be null");
+        }
+        if (portions <= 0) {
+            throw new IllegalArgumentException("Portions must be greater than zero");
+        }
     }
 
     public UUID getId() {

@@ -9,5 +9,7 @@ public record RecipeStep(int stepNumber, String description) {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("Description cannot be empty");
         }
+
+        //TODO: cambiar a un metodo de factoría RecipeStep.of() para mantener la consistencia de los VO
     }
 }

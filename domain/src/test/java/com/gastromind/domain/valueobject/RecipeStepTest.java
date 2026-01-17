@@ -18,7 +18,7 @@ class RecipeStepTest {
         int stepNumber = 1;
         String description = "Calentamos el aceite";
 
-        var step = new RecipeStep(stepNumber, description);
+        var step = RecipeStep.of(stepNumber, description);
 
         assertThat(step.stepNumber()).isEqualTo(stepNumber);
         assertThat(step.description()).isEqualTo(description);
@@ -27,7 +27,7 @@ class RecipeStepTest {
     @Test
     @DisplayName("No permitir un número de paso menos que 1")
     void shouldThrowExceptionWhenStepIsInvalid() {
-        assertThatThrownBy(() -> new RecipeStep(0, "Calentamos el aceite"))
+        assertThatThrownBy(() -> RecipeStep.of(0, "Calentamos el aceite"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Step number must be positive");
     }
@@ -37,7 +37,7 @@ class RecipeStepTest {
     @ValueSource(strings = {" ", "\t", "\n"})
     @DisplayName("No permitir una descripción vacía")
     void shouldThrowExceptionWhenDescriptionIsEmpty(String invalidDescription) {
-        assertThatThrownBy(() -> new RecipeStep(1, invalidDescription))
+        assertThatThrownBy(() -> RecipeStep.of(1, invalidDescription))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Description cannot be empty");
     }

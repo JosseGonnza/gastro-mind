@@ -52,9 +52,6 @@ public class Batch {
     }
 
     public Money getUnitCost() {
-        if (initialQuantity.value() == 0) {
-            return Money.of(0);
-        }
         BigDecimal totalCost = purchasePrice.amount();
         BigDecimal originalQuantity = BigDecimal.valueOf(initialQuantity.value());
         BigDecimal unitCost = totalCost.divide(originalQuantity, 2, RoundingMode.HALF_EVEN);

@@ -22,7 +22,7 @@ class QuantityTest {
     void shouldThrowExceptionWhenQuantityIsNegative() {
         assertThatThrownBy(() -> Quantity.of(-1.0))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Quantity cannot be negative");
+                .hasMessage("Quantity must be greater than zero");
     }
 
     @Test

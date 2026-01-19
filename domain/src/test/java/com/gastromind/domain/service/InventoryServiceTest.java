@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("InventoryService debería")
 public class InventoryServiceTest {
@@ -52,6 +53,30 @@ public class InventoryServiceTest {
             Quantity totalStock = inventoryService.calculateCurrentStock(product, bathes);
 
             assertThat(totalStock.value()).isEqualTo(17.0);
+        }
+
+        @Test
+        @DisplayName("fallar con un producto nulo")
+        void shouldThrowExceptionWhenProductIsNull() {
+            List<Batch> batches = List.of(
+                    Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0)),
+                    Batch.create(product, "LOT-2026-002", LocalDate.now().plusMonths(5), Money.of(50.0), Quantity.of(5.0)),
+                    Batch.create(product, "LOT-2026-003", LocalDate.now().plusMonths(4), Money.of(50.0), Quantity.of(2.0))
+            );
+
+            assertThatThrownBy(() -> inventoryService.calculateCurrentStock(null, batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Product cannot be null");
+        }
+
+        @Test
+        @DisplayName("fallar con una lista vacía")
+        void shouldThrowExceptionWhenListIsEmpty() {
+            List<Batch> emptyList = List.of();
+
+            assertThatThrownBy(() -> inventoryService.calculateCurrentStock(product, emptyList))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity must be greater than zero");
         }
     }
 }

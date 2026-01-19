@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("InventoryService debería")
-public class InventoryServiceTest {
+class InventoryServiceTest {
 
     public InventoryService inventoryService;
     private Product product;
@@ -70,13 +70,13 @@ public class InventoryServiceTest {
         }
 
         @Test
-        @DisplayName("fallar con una lista vacía")
-        void shouldThrowExceptionWhenListIsEmpty() {
+        @DisplayName("devolver cero con una lista vacía")
+        void shouldReturnZeroWhenListIsEmpty() {
             List<Batch> emptyList = List.of();
 
-            assertThatThrownBy(() -> inventoryService.calculateCurrentStock(product, emptyList))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Quantity must be greater than zero");
+            Quantity totalStock = inventoryService.calculateCurrentStock(product, emptyList);
+
+            assertThat(totalStock.value()).isEqualTo(0.0);
         }
     }
 }

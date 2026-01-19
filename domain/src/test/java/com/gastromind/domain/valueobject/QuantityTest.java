@@ -2,6 +2,8 @@ package com.gastromind.domain.valueobject;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,12 +11,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("Quantity debería")
 class QuantityTest {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(doubles = {0.0, 1.0, 500.0})
     @DisplayName("Crear una cantidad válida")
-    void shouldCreateValidQuantity() {
-        var quantity = Quantity.of(500.0);
+    void shouldCreateValidQuantity(double validQuantity) {
+        var quantity = Quantity.of(validQuantity);
 
-        assertThat(quantity.value()).isEqualTo(500.0);
+        assertThat(quantity.value()).isEqualTo(validQuantity);
     }
 
     @Test
@@ -22,7 +25,7 @@ class QuantityTest {
     void shouldThrowExceptionWhenQuantityIsNegative() {
         assertThatThrownBy(() -> Quantity.of(-1.0))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Quantity must be greater than zero");
+                .hasMessage("Quantity cannot be negative");
     }
 
     @Test

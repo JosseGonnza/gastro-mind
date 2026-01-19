@@ -3,8 +3,8 @@ package com.gastromind.domain.valueobject;
 public record Quantity(double value) {
 
     public Quantity {
-        if (value <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than zero");
+        if (value < 0) {
+            throw new IllegalArgumentException("Quantity cannot be negative");
         }
     }
 

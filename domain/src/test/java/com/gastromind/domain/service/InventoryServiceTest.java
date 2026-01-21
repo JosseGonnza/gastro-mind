@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -77,6 +78,30 @@ class InventoryServiceTest {
             Quantity totalStock = inventoryService.calculateCurrentStock(product, emptyList);
 
             assertThat(totalStock.value()).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("devolver cero si la lista de lotes es null")
+        void shouldReturnZeroWhenListIsNull() {
+            Quantity totalStock = inventoryService.calculateCurrentStock(product, null);
+
+            assertThat(totalStock.value()).isEqualTo(0.0);
+        }
+    }
+
+    @Nested
+    @DisplayName("al consumir productos")
+    class ConsumeProduct {
+
+        @Test
+        @DisplayName("consumir de un único lote si hay suficiente stock")
+        void shouldConsumeFromSingleBatchWhenEnoughStock() {
+            Batch batch = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            inventoryService.consumeProduct(product, Quantity.of(3.0), batches);
+
+            assertThat(batch.getCurrentQuantity().value()).isEqualTo(7.0);
         }
     }
 }

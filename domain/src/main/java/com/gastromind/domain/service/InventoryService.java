@@ -8,7 +8,6 @@ import java.util.List;
 
 public class InventoryService {
 
-
     public Quantity calculateCurrentStock(Product product, List<Batch> bathes) {
         if (product == null) {
             throw new IllegalArgumentException("Product cannot be null");
@@ -20,5 +19,9 @@ public class InventoryService {
                 .mapToDouble(batch -> batch.getCurrentQuantity().value())
                 .sum()
         );
+    }
+
+    public void consumeProduct(Product product, Quantity amountToConsume, List<Batch> batches) {
+        batches.getFirst().consume(amountToConsume);
     }
 }

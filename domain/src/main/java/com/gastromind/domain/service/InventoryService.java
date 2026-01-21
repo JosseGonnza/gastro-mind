@@ -4,6 +4,8 @@ import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
 import com.gastromind.domain.valueobject.Quantity;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class InventoryService {
@@ -22,6 +24,24 @@ public class InventoryService {
     }
 
     public void consumeProduct(Product product, Quantity amountToConsume, List<Batch> batches) {
-        batches.getFirst().consume(amountToConsume);
+        List<Batch> sortedBatches = batches.stream()
+                .filter(batch -> batch.getCurrentQuantity().value() > 0)
+                .sorted(Comparator.comparing(Batch::getEntryDate))
+                .toList();
+        double remainingToConsume = amountToConsume.value();
+        for (Batch batch : sortedBatches) {
+            if (remainingToConsume <= 0) {
+                break;
+            }
+            double batchStock = batch.getCurrentQuantity().value();
+            if (batchStock >= remainingToConsume) {
+                batch.consume(Quantity.of(remainingToConsume));
+                remainingToConsume = 0;
+            } else {
+                batch.consume(Quantity.of(batchStock));
+                remainingToConsume -= batchStock;
+            }
+
+        }
     }
 }

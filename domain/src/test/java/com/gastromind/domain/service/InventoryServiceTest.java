@@ -103,5 +103,20 @@ class InventoryServiceTest {
 
             assertThat(batch.getCurrentQuantity().value()).isEqualTo(7.0);
         }
+
+        @Test
+        @DisplayName("aplicar el método FIFO (consume los lotes más antiguos primero)")
+        void shouldApplyFifoConsumingOldestBatchesFirst() {
+            LocalDate oldDate = LocalDate.now().minusDays(10);
+            LocalDate recentDate = LocalDate.now().minusDays(5);
+            Batch oldBatch = Batch.create(product, "LOT-OLD", oldDate.plusMonths(6), Money.of(50.0), Quantity.of(5.0));
+            Batch recentBatch = Batch.create(product, "LOT-RECENT", recentDate.plusMonths(6), Money.of(50.0), Quantity.of(10.0));
+            List<Batch> batches = new ArrayList<>(List.of(oldBatch, recentBatch));
+
+            inventoryService.consumeProduct(product, Quantity.of(8), batches);
+
+            assertThat(oldBatch.getCurrentQuantity().value()).isEqualTo(0.0);
+            assertThat(recentBatch.getCurrentQuantity().value()).isEqualTo(7.0);
+        }
     }
 }

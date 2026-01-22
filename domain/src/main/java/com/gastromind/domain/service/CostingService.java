@@ -13,30 +13,26 @@ import java.util.List;
 
 public class CostingService {
     public Money calculateIngredientCost(Product product, Quantity quantity, List<Batch> batches) {
-        if (product == null) {
-            throw new IllegalArgumentException("Product cannot be null");
-        }
-        if (quantity == null) {
-            throw new IllegalArgumentException("Quantity cannot be null");
-        }
-        if (quantity.value() <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than zero");
-        }
-        if (batches == null) {
-            throw new IllegalArgumentException("Batches list cannot be null");
-        }
-        Quantity availableQuantity = Quantity.of(batches.stream()
-                .mapToDouble(batch -> batch.getCurrentQuantity().value())
-                .sum());
-        if (!availableQuantity.hasEnough(quantity)) {
-            throw new NotEnoughStockException(product, quantity, availableQuantity);
+        validateIngredientsCostInputs(product, quantity, batches);
+
+        Quantity availableStock = calculateAvailableStock(batches);
+        if (!availableStock.hasEnough(quantity)) {
+            throw new NotEnoughStockException(product, quantity, availableStock);
         }
 
-        List<Batch> sortedBatches = batches.stream()
+        List<Batch> sortedBatches = getSortedBatches(batches);
+
+        return calculateWeightedCost(quantity, sortedBatches);
+    }
+
+    private static List<Batch> getSortedBatches(List<Batch> batches) {
+        return batches.stream()
                 .filter(batch -> batch.getCurrentQuantity().value() > 0)
                 .sorted(Comparator.comparing(Batch::getExpirationDate))
                 .toList();
+    }
 
+    private static Money calculateWeightedCost(Quantity quantity, List<Batch> sortedBatches) {
         BigDecimal totalAccumulatedCost = BigDecimal.ZERO;
         double remainingNeeded = quantity.value();
         Currency currency = sortedBatches.getFirst().getPurchasePrice().currency();
@@ -54,5 +50,26 @@ public class CostingService {
             remainingNeeded -= amountToTake;
         }
         return new Money(totalAccumulatedCost, currency);
+    }
+
+    private static Quantity calculateAvailableStock(List<Batch> batches) {
+        return Quantity.of(batches.stream()
+                .mapToDouble(batch -> batch.getCurrentQuantity().value())
+                .sum());
+    }
+
+    private static void validateIngredientsCostInputs(Product product, Quantity quantity, List<Batch> batches) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
+        }
+        if (quantity == null) {
+            throw new IllegalArgumentException("Quantity cannot be null");
+        }
+        if (quantity.value() <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+        if (batches == null) {
+            throw new IllegalArgumentException("Batches list cannot be null");
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.exception.NotEnoughStockException;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("CostingService debería")
 class CostingServiceTest {
@@ -84,6 +86,46 @@ class CostingServiceTest {
             Money cost = costingService.calculateIngredientCost(rice, Quantity.of(4.0), batches);
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("24.00"));
+        }
+
+        @Test
+        @DisplayName("calcular el coste exacto agotando los lotes")
+        void shouldCalculateCostExhaustingAllBatches() {
+            Batch batch1 = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(5),
+                    Money.of(6.0), Quantity.of(2.0));
+            Batch batch2 = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
+                    Money.of(6.0), Quantity.of(3.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
+
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(5.0), batches);
+
+            assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("12.00"));
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si no hay suficiente stock")
+        void shouldThrowExceptionWhenInsufficientStock() {
+            Batch batch = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
+                    Money.of(6.0), Quantity.of(3.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0), batches))
+                    .isInstanceOf(NotEnoughStockException.class)
+                    .hasMessageContaining("Not enough stock for product Arroz Bomba")
+                    .hasMessageContaining("Requested: 5.0")
+                    .hasMessageContaining("Available: 3.0");
+        }
+
+        @Test
+        @DisplayName("calcular el coste con decimales precisos")
+        void shouldCalculateCostWithPreciseDecimals() {
+            Batch batch = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
+                    Money.of(25.0), Quantity.of(10.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.7), batches);
+
+            assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("9.25"));
         }
     }
 }

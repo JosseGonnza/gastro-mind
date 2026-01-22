@@ -145,5 +145,23 @@ class InventoryServiceTest {
                     .hasMessageContaining("Requested: 10.0")
                     .hasMessageContaining("Available: 5.0");
         }
+
+        @Test
+        @DisplayName("no modificar ningún lote si no hay stock suficiente")
+        //Comprobamos la atomicidad de la operación
+        void shouldNotModifyAnyBatchWhenNotEnoughStock() {
+            Batch batch1 = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(5.0));
+            Batch batch2 = Batch.create(product, "LOT-2026-002", LocalDate.now().plusMonths(5), Money.of(50.0), Quantity.of(3.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
+
+            try {
+                inventoryService.consumeProduct(product, Quantity.of(10.0), batches);
+            } catch (NotEnoughStockException e) {
+                //Solo capturamos la excepción, pero no la lanzamos para poder llegar a los asserts
+            }
+
+            assertThat(batch1.getCurrentQuantity().value()).isEqualTo(5.0);
+            assertThat(batch2.getCurrentQuantity().value()).isEqualTo(3.0);
+        }
     }
 }

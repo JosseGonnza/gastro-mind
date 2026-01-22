@@ -24,9 +24,15 @@ public class InventoryService {
         );
     }
 
-    public void consumeProduct(Product product, Quantity amountToConsume, List<Batch> batches) {
+    //Con synchronized aseguramos la atomicidad y que solo un hilo ejecute el bloque a la vez
+    public synchronized void consumeProduct(Product product, Quantity amountToConsume, List<Batch> batches) {
+        /*
+        TODO: Interesante para mejorar rendimiento -> ReentrantLocK
+        Lo usamos por producto, por lo que no bloquea el inventario, si no el producto a consumir.
+        Mejora para cuando haya mucha concurrencia!
+         */
         Quantity availableToConsume = calculateCurrentStock(product, batches);
-        if (availableToConsume.value() < amountToConsume.value()) {
+        if (!availableToConsume.hasEnough(amountToConsume)) {
             throw new NotEnoughStockException(product, amountToConsume, availableToConsume);
         }
         List<Batch> sortedBatches = batches.stream()

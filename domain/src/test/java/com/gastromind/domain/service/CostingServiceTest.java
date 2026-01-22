@@ -185,12 +185,68 @@ class CostingServiceTest {
                     Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0))
             ));
             availableBatches.put(chicken, List.of(
-                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0))
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0))
             ));
 
             Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
 
             assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("6.00"));
+        }
+
+        @Test
+        @DisplayName("calcular el coste con diferentes precios entre lotes")
+        void shouldCalculateRecipeCostWithDifferentPricesBetweenBatches() {
+            Recipe recipe = Recipe.create(
+                    "Paella Valenciana",
+                    "Para muchas personas",
+                    Duration.ofMinutes(60),
+                    Difficulty.MEDIUM,
+                    8
+            );
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(3.0)));
+            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.5)));
+            Map<Product, List<Batch>> availableBatches = new HashMap<>();
+            availableBatches.put(rice, List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(1), Money.of(10.0), Quantity.of(1.0)),
+                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(15.0), Quantity.of(5.0))
+            ));
+            availableBatches.put(tomato, List.of(
+                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(2.0), Quantity.of(2.0))
+            ));
+
+            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+
+            assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("16.50"));
+        }
+
+        @Test
+        @DisplayName("calcular coste de receta con múltiples ingredientes")
+        void shouldCalculateRecipeCostWithMultipleIngredients() {
+            Recipe recipe = Recipe.create(
+                    "Paella Valenciana",
+                    "Receta tradicional",
+                    Duration.ofMinutes(45),
+                    Difficulty.MEDIUM,
+                    4
+            );
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(0.4)));
+            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.2)));
+            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.1)));
+
+            Map<Product, List<Batch>> availableBatches = new HashMap<>();
+            availableBatches.put(rice, List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(5.0))
+            ));
+            availableBatches.put(chicken, List.of(
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(3), Money.of(40.0), Quantity.of(5.0))
+            ));
+            availableBatches.put(tomato, List.of(
+                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(3.0), Quantity.of(1.0))
+            ));
+
+            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+
+            assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("2.70"));
         }
     }
 }

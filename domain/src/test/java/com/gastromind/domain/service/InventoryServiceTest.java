@@ -2,6 +2,7 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.exception.NotEnoughStockException;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
@@ -117,6 +118,32 @@ class InventoryServiceTest {
 
             assertThat(oldBatch.getCurrentQuantity().value()).isEqualTo(0.0);
             assertThat(recentBatch.getCurrentQuantity().value()).isEqualTo(7.0);
+        }
+
+        @Test
+        @DisplayName("consumir todo el stock disponible")
+        void shouldConsumeAllAvailableStock() {
+            Batch batch1 = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(5.0));
+            Batch batch2 = Batch.create(product, "LOT-2026-002", LocalDate.now().plusMonths(5), Money.of(50.0), Quantity.of(10.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
+
+            inventoryService.consumeProduct(product, Quantity.of(15.0), batches);
+
+            assertThat(batch1.getCurrentQuantity().value()).isEqualTo(0.0);
+            assertThat(batch2.getCurrentQuantity().value()).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("fallar cuando no hay suficiente stock")
+        void shouldThrowExceptionWhenInsufficientStock() {
+            Batch batch = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(5.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(10.0), batches))
+                    .isInstanceOf(NotEnoughStockException.class)
+                    .hasMessageContaining("Not enough stock for product Arroz Bomba")
+                    .hasMessageContaining("Requested: 10.0")
+                    .hasMessageContaining("Available: 5.0");
         }
     }
 }

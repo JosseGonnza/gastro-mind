@@ -2,6 +2,7 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.exception.NotEnoughStockException;
 import com.gastromind.domain.valueobject.Quantity;
 
 import java.util.ArrayList;
@@ -24,6 +25,10 @@ public class InventoryService {
     }
 
     public void consumeProduct(Product product, Quantity amountToConsume, List<Batch> batches) {
+        Quantity availableToConsume = calculateCurrentStock(product, batches);
+        if (availableToConsume.value() < amountToConsume.value()) {
+            throw new NotEnoughStockException(product, amountToConsume, availableToConsume);
+        }
         List<Batch> sortedBatches = batches.stream()
                 .filter(batch -> batch.getCurrentQuantity().value() > 0)
                 .sorted(Comparator.comparing(Batch::getEntryDate))
@@ -41,7 +46,6 @@ public class InventoryService {
                 batch.consume(Quantity.of(batchStock));
                 remainingToConsume -= batchStock;
             }
-
         }
     }
 }

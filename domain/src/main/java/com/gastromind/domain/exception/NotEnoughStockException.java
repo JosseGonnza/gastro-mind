@@ -12,7 +12,7 @@ public class NotEnoughStockException extends RuntimeException{
 
     public NotEnoughStockException(Product product, Quantity requested, Quantity available) {
         super(String.format(
-                "Not enough stock for product '%s'. Requested: '%s', Available: '%s'",
+                "Not enough stock for product %s. Requested: %s, Available: %s",
                 product.getName(),
                 requested.value(),
                 available.value()

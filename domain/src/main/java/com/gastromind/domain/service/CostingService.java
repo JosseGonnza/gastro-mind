@@ -2,14 +2,17 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.entity.Recipe;
 import com.gastromind.domain.exception.NotEnoughStockException;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
+import com.gastromind.domain.valueobject.RecipeIngredient;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 public class CostingService {
     public Money calculateIngredientCost(Product product, Quantity quantity, List<Batch> batches) {
@@ -23,6 +26,20 @@ public class CostingService {
         List<Batch> sortedBatches = getSortedBatches(batches);
 
         return calculateWeightedCost(quantity, sortedBatches);
+    }
+
+    public Money calculateRecipeCost(Recipe recipe, Map<Product, List<Batch>> availableBatches) {
+        Money totalCost = Money.of(0.0);
+        for (RecipeIngredient ingredient : recipe.getIngredients()) {
+            Product product = ingredient.product();
+            Quantity requiredQuantity = ingredient.quantity();
+
+            List<Batch> batches = availableBatches.get(product);
+
+            Money ingredientCost = calculateIngredientCost(product, requiredQuantity, batches);
+            totalCost = totalCost.add(ingredientCost);
+        }
+        return totalCost;
     }
 
     private static List<Batch> getSortedBatches(List<Batch> batches) {

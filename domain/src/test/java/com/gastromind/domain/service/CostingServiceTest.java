@@ -2,21 +2,18 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.entity.Recipe;
 import com.gastromind.domain.exception.NotEnoughStockException;
-import com.gastromind.domain.valueobject.Category;
-import com.gastromind.domain.valueobject.Money;
-import com.gastromind.domain.valueobject.Quantity;
-import com.gastromind.domain.valueobject.UnitOfMeasure;
+import com.gastromind.domain.valueobject.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -164,6 +161,36 @@ class CostingServiceTest {
             assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0), null))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Batches list cannot be null");
+        }
+    }
+
+    @Nested
+    @DisplayName("al calcular el coste de una receta")
+    class CalculateRecipeCost {
+
+        @Test
+        @DisplayName("calcular el coste con precios estables")
+        void shouldCalculateRecipeCostWithStablePrices() {
+            Recipe recipe = Recipe.create(
+                    "Arroz con pollo",
+                    "Receta sencilla",
+                    Duration.ofMinutes(30),
+                    Difficulty.EASY,
+                    4
+            );
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1)));
+            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5)));
+            Map<Product, List<Batch>> availableBatches = new HashMap<>();
+            availableBatches.put(rice, List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0))
+            ));
+            availableBatches.put(chicken, List.of(
+                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0))
+            ));
+
+            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+
+            assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("6.00"));
         }
     }
 }

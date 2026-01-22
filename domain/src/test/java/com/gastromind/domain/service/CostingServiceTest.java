@@ -127,5 +127,43 @@ class CostingServiceTest {
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("9.25"));
         }
+
+        @Test
+        @DisplayName("lanzar excepción si el producto es null")
+        void shouldThrowExceptionWhenProductIsNull() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(null, Quantity.of(5.0), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Product cannot be null");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad es null")
+        void shouldThrowExceptionWhenQuantityIsNull() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, null, batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity cannot be null");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad es cero o negativa")
+        void shouldThrowExceptionWhenQuantityIsZeroOrNegative() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(0.0), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity must be greater than zero");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la lista de lotes es null")
+        void shouldThrowExceptionWhenBatchesIsNull() {
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0), null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Batches list cannot be null");
+        }
     }
 }

@@ -13,6 +13,18 @@ import java.util.List;
 
 public class CostingService {
     public Money calculateIngredientCost(Product product, Quantity quantity, List<Batch> batches) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
+        }
+        if (quantity == null) {
+            throw new IllegalArgumentException("Quantity cannot be null");
+        }
+        if (quantity.value() <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+        if (batches == null) {
+            throw new IllegalArgumentException("Batches list cannot be null");
+        }
         Quantity availableQuantity = Quantity.of(batches.stream()
                 .mapToDouble(batch -> batch.getCurrentQuantity().value())
                 .sum());

@@ -71,5 +71,19 @@ class CostingServiceTest {
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("6.00"));
             assertThat(cost.currency().getCurrencyCode()).isEqualTo("EUR");
         }
+
+        @Test
+        @DisplayName("calcular el coste con múltiples lotes")
+        void shouldCalculateCostWithSeveralBatches() {
+            Batch batch1 = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(5),
+                    Money.of(20.0), Quantity.of(2.0));
+            Batch batch2 = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
+                    Money.of(10.0), Quantity.of(5.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
+
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(4.0), batches);
+
+            assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("24.00"));
+        }
     }
 }

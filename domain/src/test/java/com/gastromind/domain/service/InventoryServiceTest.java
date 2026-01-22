@@ -180,5 +180,43 @@ class InventoryServiceTest {
             assertThat(batch2.getCurrentQuantity().value()).isEqualTo(3.0);  // Consumimos una parte
             assertThat(batch3.getCurrentQuantity().value()).isEqualTo(5.0);  // No lo tocamos
         }
+
+        @Test
+        @DisplayName("lanzar excepción si el producto es null")
+        void shouldThrowExceptionWhenProductIsNull() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(null, Quantity.of(5.0), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Product cannot be null");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad a consumir es null")
+        void shouldThrowExceptionWhenAmountIsNull() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, null, batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Amount to consume cannot be null");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad a consumir es cero o negativa")
+        void shouldThrowExceptionWhenAmountIsZeroOrNegative() {
+            List<Batch> batches = List.of();
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(0.0), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Amount to consume must be greater than zero");
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la lista de lotes es null")
+        void shouldThrowExceptionWhenBatchesIsNull() {
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(5.0), null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Batches list cannot be null");
+        }
     }
 }

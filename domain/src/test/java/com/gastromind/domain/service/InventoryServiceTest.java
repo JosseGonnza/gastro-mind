@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 @DisplayName("InventoryService debería")
 class InventoryServiceTest {
@@ -106,18 +105,18 @@ class InventoryServiceTest {
         }
 
         @Test
-        @DisplayName("aplicar el método FIFO (consume los lotes más antiguos primero)")
-        void shouldApplyFifoConsumingOldestBatchesFirst() {
-            LocalDate oldDate = LocalDate.now().minusDays(10);
-            LocalDate recentDate = LocalDate.now().minusDays(5);
-            Batch oldBatch = Batch.create(product, "LOT-OLD", oldDate.plusMonths(6), Money.of(50.0), Quantity.of(5.0));
-            Batch recentBatch = Batch.create(product, "LOT-RECENT", recentDate.plusMonths(6), Money.of(50.0), Quantity.of(10.0));
-            List<Batch> batches = new ArrayList<>(List.of(oldBatch, recentBatch));
+        @DisplayName("aplicar el método FEFO (consume los lotes que caducan antes, primero)")
+        void shouldApplyFefoConsumingBatchesExpireFirst() {
+            LocalDate soonExpiry = LocalDate.now().plusMonths(1);
+            LocalDate laterExpiry = LocalDate.now().plusMonths(6);
+            Batch expiringBatch = Batch.create(product, "LOT-EXPIRING", soonExpiry, Money.of(50.0), Quantity.of(5.0));
+            Batch freshBatch = Batch.create(product, "LOT-FRESH", laterExpiry, Money.of(50.0), Quantity.of(10.0));
+            List<Batch> batches = new ArrayList<>(List.of(expiringBatch, freshBatch));
 
             inventoryService.consumeProduct(product, Quantity.of(8), batches);
 
-            assertThat(oldBatch.getCurrentQuantity().value()).isEqualTo(0.0);
-            assertThat(recentBatch.getCurrentQuantity().value()).isEqualTo(7.0);
+            assertThat(expiringBatch.getCurrentQuantity().value()).isEqualTo(0.0);
+            assertThat(freshBatch.getCurrentQuantity().value()).isEqualTo(7.0);
         }
 
         @Test
@@ -148,7 +147,7 @@ class InventoryServiceTest {
 
         @Test
         @DisplayName("no modificar ningún lote si no hay stock suficiente")
-        //Comprobamos la atomicidad de la operación
+            //Comprobamos la atomicidad de la operación
         void shouldNotModifyAnyBatchWhenNotEnoughStock() {
             Batch batch1 = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(5.0));
             Batch batch2 = Batch.create(product, "LOT-2026-002", LocalDate.now().plusMonths(5), Money.of(50.0), Quantity.of(3.0));
@@ -162,6 +161,24 @@ class InventoryServiceTest {
 
             assertThat(batch1.getCurrentQuantity().value()).isEqualTo(5.0);
             assertThat(batch2.getCurrentQuantity().value()).isEqualTo(3.0);
+        }
+
+        @Test
+        @DisplayName("ordenar por fecha de entrada")
+        void shouldSortByEntryDate() {
+            LocalDate expiry1 = LocalDate.now().plusMonths(1);
+            LocalDate expiry2 = LocalDate.now().plusMonths(3);
+            LocalDate expiry3 = LocalDate.now().plusMonths(6);
+            Batch batch2 = Batch.create(product, "LOT-2026-002", expiry2, Money.of(45.0), Quantity.of(5.0));
+            Batch batch3 = Batch.create(product, "LOT-2026-003", expiry3, Money.of(40.0), Quantity.of(5.0));
+            Batch batch1 = Batch.create(product, "LOT-2026-001", expiry1, Money.of(50.0), Quantity.of(5.0));
+            List<Batch> batches = new ArrayList<>(List.of(batch2, batch3, batch1));
+
+            inventoryService.consumeProduct(product, Quantity.of(7.0), batches);
+
+            assertThat(batch1.getCurrentQuantity().value()).isEqualTo(0.0);  // Gastamos el viejo
+            assertThat(batch2.getCurrentQuantity().value()).isEqualTo(3.0);  // Consumimos una parte
+            assertThat(batch3.getCurrentQuantity().value()).isEqualTo(5.0);  // No lo tocamos
         }
     }
 }

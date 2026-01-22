@@ -37,7 +37,7 @@ public class InventoryService {
         }
         List<Batch> sortedBatches = batches.stream()
                 .filter(batch -> batch.getCurrentQuantity().value() > 0)
-                .sorted(Comparator.comparing(Batch::getEntryDate))
+                .sorted(Comparator.comparing(Batch::getExpirationDate))
                 .toList();
         double remainingToConsume = amountToConsume.value();
         for (Batch batch : sortedBatches) {

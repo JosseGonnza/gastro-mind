@@ -1,4 +1,4 @@
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:9cc0ec,50:c4b2ee,100:f0acd0&animation=fadeIn&height=120&section=header"/>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:ffd59e,50:ffb38a,100:ff8a80&animation=fadeIn&height=120&section=header"/>
 
 
 # 🍳 Gastro Mind
@@ -89,4 +89,4 @@ mvn -pl domain test   # solo el dominio
 - `consumeProduct` es `synchronized`: dos consumos a la vez sobre el mismo
   inventario no se pisan.
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:9cc0ec,50:c4b2ee,100:f0acd0&height=80&section=footer"/>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:ffd59e,50:ffb38a,100:ff8a80&height=80&section=footer"/>

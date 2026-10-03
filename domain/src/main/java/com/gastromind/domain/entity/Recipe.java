@@ -15,31 +15,31 @@ public class Recipe {
     private final String name;
     private final String description;
     private final Duration cookingTime;
-    private final Difficulty difficult;
+    private final Difficulty difficulty;
     private final int portions;
     private final List<RecipeIngredient> ingredients;
     private final List<RecipeStep> steps;
 
-    private Recipe(UUID id, String name, String description, Duration cookingTime, Difficulty difficult, int portions) {
-        validateInvariants(name, cookingTime, difficult, portions);
+    private Recipe(UUID id, String name, String description, Duration cookingTime, Difficulty difficulty, int portions) {
+        validateInvariants(name, cookingTime, difficulty, portions);
         this.id = id;
         this.name = name;
         this.description = description;
         this.cookingTime = cookingTime;
-        this.difficult = difficult;
+        this.difficulty = difficulty;
         this.portions = portions;
         this.ingredients = new ArrayList<>();
         this.steps = new ArrayList<>();
     }
 
     public static Recipe create(String name, String description, Duration cookingTime,
-                                Difficulty difficult, int portions) {
+                                Difficulty difficulty, int portions) {
         return new Recipe(
                 UUID.randomUUID(),
                 name,
                 description,
                 cookingTime,
-                difficult,
+                difficulty,
                 portions);
     }
 
@@ -64,14 +64,14 @@ public class Recipe {
         return ingredients.stream().anyMatch(i -> i.product().equals(ingredient.product()));
     }
 
-    private static void validateInvariants(String name, Duration cookingTime, Difficulty difficult, int portions) {
+    private static void validateInvariants(String name, Duration cookingTime, Difficulty difficulty, int portions) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Name cannot be empty");
         }
         if (cookingTime == null) {
             throw new IllegalArgumentException("Cooking time cannot be null");
         }
-        if (difficult == null) {
+        if (difficulty == null) {
             throw new IllegalArgumentException("Difficulty cannot be null");
         }
         if (portions <= 0) {
@@ -95,8 +95,8 @@ public class Recipe {
         return cookingTime;
     }
 
-    public Difficulty getDifficult() {
-        return difficult;
+    public Difficulty getDifficulty() {
+        return difficulty;
     }
 
     public int getPortions() {

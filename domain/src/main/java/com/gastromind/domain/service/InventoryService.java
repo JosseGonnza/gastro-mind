@@ -10,14 +10,14 @@ import java.util.List;
 
 public class InventoryService {
 
-    public Quantity calculateCurrentStock(Product product, List<Batch> bathes) {
+    public Quantity calculateCurrentStock(Product product, List<Batch> batches) {
         if (product == null) {
             throw new IllegalArgumentException("Product cannot be null");
         }
-        if (bathes == null || bathes.isEmpty()) {
+        if (batches == null || batches.isEmpty()) {
             return Quantity.of(0);
         }
-        return Quantity.of(bathes.stream()
+        return Quantity.of(batches.stream()
                 .mapToDouble(batch -> batch.getCurrentQuantity().value())
                 .sum()
         );

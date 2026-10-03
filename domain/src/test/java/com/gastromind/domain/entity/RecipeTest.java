@@ -20,7 +20,7 @@ class RecipeTest {
     private static final String VALID_NAME = "Paella Valenciana";
     private static final String VALID_DESCRIPTION = "Receta tradicional valenciana";
     private static final Duration VALID_TIME = Duration.ofMinutes(45);
-    private static final Difficulty VALID_DIFFICULT = Difficulty.MEDIUM;
+    private static final Difficulty VALID_DIFFICULTY = Difficulty.MEDIUM;
     private static final int VALID_PORTIONS = 4;
 
     @Test
@@ -30,7 +30,7 @@ class RecipeTest {
                 VALID_NAME,
                 VALID_DESCRIPTION,
                 VALID_TIME,
-                VALID_DIFFICULT,
+                VALID_DIFFICULTY,
                 VALID_PORTIONS
         );
 
@@ -38,7 +38,7 @@ class RecipeTest {
         assertThat(recipe.getName()).isEqualTo(VALID_NAME);
         assertThat(recipe.getDescription()).isEqualTo(VALID_DESCRIPTION);
         assertThat(recipe.getCookingTime()).isEqualTo(VALID_TIME);
-        assertThat(recipe.getDifficult()).isEqualTo(VALID_DIFFICULT);
+        assertThat(recipe.getDifficulty()).isEqualTo(VALID_DIFFICULTY);
         assertThat(recipe.getPortions()).isEqualTo(VALID_PORTIONS);
         assertThat(recipe.getIngredients()).isEmpty();
         assertThat(recipe.getSteps()).isEmpty();
@@ -54,7 +54,7 @@ class RecipeTest {
         @DisplayName("No permitir nombre vacío")
         void shouldThrowExceptionWhenNameIsEmpty(String invalidName) {
             assertThatThrownBy(() -> Recipe.create(
-                    invalidName, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS))
+                    invalidName, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Name cannot be empty");
         }
@@ -63,7 +63,7 @@ class RecipeTest {
         @DisplayName("No permitir tiempo de cocinado nulo")
         void shouldThrowExceptionWhenCookingTimeIsNull() {
             assertThatThrownBy(() -> Recipe.create(
-                    VALID_NAME, VALID_DESCRIPTION, null, VALID_DIFFICULT, VALID_PORTIONS))
+                    VALID_NAME, VALID_DESCRIPTION, null, VALID_DIFFICULTY, VALID_PORTIONS))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Cooking time cannot be null");
         }
@@ -82,7 +82,7 @@ class RecipeTest {
         @DisplayName("No permitir porciones menor o igual a cero")
         void shouldThrowExceptionWhenPortionIsInvalid(int invalidPortions) {
             assertThatThrownBy(() -> Recipe.create(
-                    VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, invalidPortions))
+                    VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, invalidPortions))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Portions must be greater than zero");
         }
@@ -100,7 +100,7 @@ class RecipeTest {
         @Test
         @DisplayName("Permitir añadir un ingrediente correctamente")
         void shouldAddIngredient() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
             var ingredient = RecipeIngredient.of(rice, Quantity.of(400));
 
             recipe.addIngredient(ingredient);
@@ -112,7 +112,7 @@ class RecipeTest {
         @Test
         @DisplayName("No permitir añadir un ingrediente nulo")
         void shouldThrowExceptionWhenIngredientIsNull() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
 
             assertThatThrownBy(() -> recipe.addIngredient(null))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -122,7 +122,7 @@ class RecipeTest {
         @Test
         @DisplayName("No permitir productos duplicados")
         void shouldThrowExceptionWhenProductIsDuplicated() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
             var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400));
             var ingredient2 = RecipeIngredient.of(rice, Quantity.of(200));
 
@@ -136,7 +136,7 @@ class RecipeTest {
         @Test
         @DisplayName("Permitir añadir ingredientes diferentes")
         void shouldAddSeveralDifferentIngredients() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
             var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400));
             var ingredient2 = RecipeIngredient.of(chicken, Quantity.of(200));
 
@@ -156,7 +156,7 @@ class RecipeTest {
         @Test
         @DisplayName("Permitir añadir un paso correctamente")
         void shouldAddStep() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
             var step = RecipeStep.of(1, "Calentar el aceite");
 
             recipe.addStep(step);
@@ -168,7 +168,7 @@ class RecipeTest {
         @Test
         @DisplayName("No permitir añadir un paso nulo")
         void shouldExceptionWhenInvalidStep() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
 
             assertThatThrownBy(() -> recipe.addStep(null))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -178,7 +178,7 @@ class RecipeTest {
         @Test
         @DisplayName("Permitir añadir varios pasos")
         void shouldAddSeveralSteps() {
-            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULT, VALID_PORTIONS);
+            var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
             var step1 = RecipeStep.of(1, "Calentar el aceite");
             var step2 = RecipeStep.of(2, "Sofreir la cebolla");
 

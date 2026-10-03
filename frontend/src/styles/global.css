@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-crema: #fdf8f1;
+  --color-trigo: #ffd59e;
+  --color-melocoton: #ffb38a;
+  --color-brasa: #ff8a80;
+  --color-brasa-oscura: #e25d52;
+}

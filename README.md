@@ -1,56 +1,92 @@
-# gastro-mind
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:9cc0ec,50:c4b2ee,100:f0acd0&animation=fadeIn&height=120&section=header"/>
 
-ERP modular para hostelería: compras, stock y escandallos, pensado desde dentro de una cocina.
 
-> **En desarrollo.** El dominio (las reglas de negocio) está hecho con TDD. La API REST y la persistencia son lo siguiente.
+# 🍳 Gastro Mind
 
-## Qué hace hoy
+> ERP modular para hostelería: **productos, lotes, stock y escandallos**.
+> Responde a tres preguntas de cualquier cocina: qué hay en cámara, qué hay
+> que gastar primero y cuánto cuesta de verdad cada plato.
 
-- **Productos:** ficha con categoría, unidad de medida y los 14 alérgenos de declaración obligatoria.
-- **Lotes:** cada entrada de género con su caducidad, su precio de compra y su coste unitario.
-- **Stock:** cantidad disponible por producto, sumando sus lotes.
-- **Consumo FEFO:** al gastar un producto se consume primero el lote que caduca antes. Si no hay stock suficiente, no se toca ningún lote.
-- **Recetas:** ingredientes, pasos, raciones, tiempo y dificultad.
-- **Escandallo:** coste de un ingrediente según el precio real de cada lote que consume, y coste total de una receta.
+Todas las cocinas hacen escandallos, pero casi siempre con un precio medio
+apuntado en un Excel que se queda viejo con la siguiente factura del proveedor.
+Gastro Mind calcula el coste con lo que costó de verdad cada lote que se gasta,
+y gasta primero lo que caduca antes, como en una cámara bien llevada.
 
-## Arquitectura
+Está en desarrollo: el dominio, que es donde viven las reglas del negocio, está
+hecho con TDD. La API REST y la persistencia son lo siguiente.
 
-Hexagonal, en tres módulos Maven:
+## Cómo calcula
 
-| Módulo | Contenido | Estado |
-| --- | --- | --- |
-| `domain` | Entidades, value objects y servicios de dominio, sin dependencias de frameworks | Hecho |
-| `application` | Casos de uso | Pendiente |
-| `infrastructure` | API REST con Spring Boot y persistencia | Pendiente |
+Cada entrada de género es un **lote** con su caducidad y su precio de compra.
+Un ejemplo con arroz bomba:
 
-## Cómo ejecutarlo
+| Lote | Caduca | Compra | Coste por kg |
+|---|---|---|---|
+| **LOT-001** | En 5 meses | 2 kg por 20 € | 10,00 € |
+| **LOT-002** | En 6 meses | 5 kg por 10 € | 2,00 € |
 
-Requisitos: Java 21 y Maven.
+Una receta que necesita **4 kg** gasta primero LOT-001, que caduca antes
+(2 kg × 10 € = 20 €), y completa con LOT-002 (2 kg × 2 € = 4 €). El escandallo
+de ese arroz es **24 €**, no un precio medio.
 
-```bash
-mvn test
-```
+- **FEFO** (*first expired, first out*): se gasta primero el lote que caduca
+  antes, no el que entró antes.
+- Si no hay stock suficiente, **no se toca ningún lote**: el consumo es todo o
+  nada.
+- Un lote **caducado no se acepta** al darlo de entrada.
+- El dinero va en `BigDecimal` con redondeo bancario, y las cantidades nunca
+  son negativas.
 
-Los tests se leen como especificaciones del negocio, por ejemplo: *"CostingService debería calcular el coste con múltiples lotes"*.
+## Qué hace
+
+- **🥕 Productos** — ficha con categoría (frescos, despensa, bebidas y no
+  comestibles), unidad de medida (kg, g, L, ml, ud, manojo y ración) y los
+  **14 alérgenos** de declaración obligatoria.
+- **📦 Lotes** — cada entrada de género con su SKU, su caducidad, su precio de
+  compra y su coste unitario.
+- **🧊 Stock** — cantidad disponible por producto, sumando sus lotes, y
+  consumo FEFO.
+- **📖 Recetas** — ingredientes sin productos repetidos, pasos, raciones,
+  tiempo y dificultad.
+- **💶 Escandallo** — coste de un ingrediente según los lotes que consume y
+  coste total de una receta.
 
 ## Cómo está hecho
 
-- **TDD:** cada regla nace de un test en rojo; el historial de commits lo refleja.
+- **Java 21 + Maven multimódulo** → arquitectura hexagonal en tres módulos:
+  `domain`, `application` e `infrastructure`.
+- **Dominio sin frameworks**: entidades (`Product`, `Batch`, `Recipe`), value
+  objects inmutables como `record` (`Money`, `Quantity`, `RecipeIngredient`,
+  `RecipeStep`) y servicios de dominio (`InventoryService`, `CostingService`).
+- **TDD de principio a fin**: cada regla nace de un test en rojo, y el
+  historial de commits lo cuenta.
+- **82 tests** (JUnit 5 + AssertJ) con nombres en español que se leen como
+  reglas del negocio: *«CostingService debería calcular el coste con múltiples
+  lotes»*.
 - **Una rama y un pull request por funcionalidad.**
-- **Value objects inmutables:** `Money` con `BigDecimal` y redondeo bancario, `Quantity` sin negativos.
+- **Spring Boot 3** reservado para la capa de infraestructura.
 
-## Stack
+## Correrlo en local
 
-Java 21 · Maven · JUnit 5 · AssertJ · Spring Boot 3 (capa de infraestructura)
+Requisitos: Java 21 y Maven.
 
-## Próximos pasos
+```sh
+mvn test              # todos los tests
+mvn -pl domain test   # solo el dominio
+```
 
-- [ ] Compras: proveedores, pedidos y albaranes de entrada que generan lotes
-- [ ] Casos de uso en `application`
-- [ ] API REST y persistencia
-- [ ] Mermas e inventario
-- [ ] Coste unitario sin redondeo intermedio
+## Lo que viene
 
----
+- [ ] **Compras**: proveedores, pedidos y albaranes de entrada que generan lotes.
+- [ ] Casos de uso en `application`.
+- [ ] **API REST** y persistencia.
+- [ ] Mermas e inventario.
+- [ ] Coste unitario sin redondeo intermedio.
 
-Jose González Quevedo · [dev.jotagestudio.es](https://dev.jotagestudio.es/)
+## Notas
+
+- Las categorías ya separan bebidas y alcohol pensando en un futuro TPV.
+- `consumeProduct` es `synchronized`: dos consumos a la vez sobre el mismo
+  inventario no se pisan.
+
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:9cc0ec,50:c4b2ee,100:f0acd0&height=80&section=footer"/>

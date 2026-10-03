@@ -45,13 +45,13 @@ class InventoryServiceTest {
         @Test
         @DisplayName("sumar las cantidades actuales de todos los lotes")
         void shouldSumCurrentQuantitiesOfBatches() {
-            List<Batch> bathes = List.of(
+            List<Batch> batches = List.of(
                     Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0)),
                     Batch.create(product, "LOT-2026-002", LocalDate.now().plusMonths(5), Money.of(50.0), Quantity.of(5.0)),
                     Batch.create(product, "LOT-2026-003", LocalDate.now().plusMonths(4), Money.of(50.0), Quantity.of(2.0))
             );
 
-            Quantity totalStock = inventoryService.calculateCurrentStock(product, bathes);
+            Quantity totalStock = inventoryService.calculateCurrentStock(product, batches);
 
             assertThat(totalStock.value()).isEqualTo(17.0);
         }

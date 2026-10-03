@@ -12,8 +12,9 @@ apuntado en un Excel que se queda viejo con la siguiente factura del proveedor.
 Gastro Mind calcula el coste con lo que costó de verdad cada lote que se gasta,
 y gasta primero lo que caduca antes, como en una cámara bien llevada.
 
-Está en desarrollo: el dominio, que es donde viven las reglas del negocio, está
-hecho con TDD. La API REST y la persistencia son lo siguiente.
+Está en desarrollo y crece por funcionalidades completas: cada una atraviesa
+dominio, casos de uso, API y base de datos antes de empezar la siguiente. La
+primera, el **catálogo de productos**, ya funciona de punta a punta.
 
 ## Cómo calcula
 
@@ -41,7 +42,8 @@ de ese arroz es **24 €**, no un precio medio.
 
 - **🥕 Productos** — ficha con categoría (frescos, despensa, bebidas y no
   comestibles), unidad de medida (kg, g, L, ml, ud, manojo y ración) y los
-  **14 alérgenos** de declaración obligatoria.
+  **14 alérgenos** de declaración obligatoria. Se guardan en PostgreSQL y se
+  gestionan por API.
 - **📦 Lotes** — cada entrada de género con su SKU, su caducidad, su precio de
   compra y su coste unitario.
 - **🧊 Stock** — cantidad disponible por producto, sumando sus lotes, y
@@ -51,42 +53,78 @@ de ese arroz es **24 €**, no un precio medio.
 - **💶 Escandallo** — coste de un ingrediente según los lotes que consume y
   coste total de una receta.
 
+Lotes, stock, recetas y escandallo viven por ahora solo en el dominio: llegarán
+a la API en las próximas funcionalidades.
+
+## La API
+
+| Método | Ruta | Qué hace | Respuesta |
+|---|---|---|---|
+| `POST` | `/products` | Crea un producto | **201** con su `Location`, o **400** si no es válido |
+| `GET` | `/products` | Lista los productos por nombre | **200** |
+| `GET` | `/products/{id}` | Consulta un producto | **200**, o **404** si no existe |
+
+- Los errores siguen el estándar **Problem Details** (RFC 9457):
+  `application/problem+json` con `status`, `title` y `detail`.
+- Los nombres se ordenan **como en español**: sin distinguir mayúsculas y con
+  tildes y eñes en su sitio (*aceite, Nata, Ñora, Óregano*).
+
 ## Cómo está hecho
 
 - **Java 21 + Maven multimódulo** → arquitectura hexagonal en tres módulos:
-  `domain`, `application` e `infrastructure`.
-- **Dominio sin frameworks**: entidades (`Product`, `Batch`, `Recipe`), value
-  objects inmutables como `record` (`Money`, `Quantity`, `RecipeIngredient`,
-  `RecipeStep`) y servicios de dominio (`InventoryService`, `CostingService`).
+  - `domain` — entidades, value objects y servicios de dominio, sin frameworks.
+  - `application` — casos de uso (`CreateProduct`, `GetProduct`,
+    `ListProducts`) y el puerto `ProductRepository`. Java puro, sin Spring.
+  - `infrastructure` — Spring Boot 3: la API REST y el adaptador de
+    persistencia.
+- **SQL escrito a mano con JDBC puro**: `Connection`, `PreparedStatement` y
+  `ResultSet`, con transacciones explícitas y sin ORM.
+- **PostgreSQL 16** con migraciones **Flyway** versionadas en
+  `infrastructure/src/main/resources/db/migration`.
 - **TDD de principio a fin**: cada regla nace de un test en rojo, y el
   historial de commits lo cuenta.
-- **82 tests** (JUnit 5 + AssertJ) con nombres en español que se leen como
-  reglas del negocio: *«CostingService debería calcular el coste con múltiples
-  lotes»*.
-- **Una rama y un pull request por funcionalidad.**
-- **Spring Boot 3** reservado para la capa de infraestructura.
+- **102 tests** (JUnit 5 + AssertJ): unitarios en el dominio y los casos de
+  uso, y de integración contra un **PostgreSQL real** gracias a
+  **Testcontainers**. Los nombres en español se leen como reglas del negocio:
+  *«CostingService debería calcular el coste con múltiples lotes»*.
+- **Integración continua** con GitHub Actions: cada push a `main` pasa todos
+  los tests.
 
 ## Correrlo en local
 
-Requisitos: Java 21 y Maven.
+Requisitos: Java 21, Maven y Docker.
 
 ```sh
-mvn test              # todos los tests
-mvn -pl domain test   # solo el dominio
+docker compose up -d                                          # PostgreSQL
+mvn verify                                                    # tests (necesita Docker)
+mvn -DskipTests package                                       # construir
+java -jar infrastructure/target/infrastructure-0.0.1-SNAPSHOT.jar   # API en :8080
+```
+
+## Probarla
+
+```sh
+curl -i -X POST localhost:8080/products \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Pan de semillas", "category": "BAKERY", "unit": "UNIT", "allergens": ["GLUTEN", "SESAME"]}'
+
+curl localhost:8080/products
 ```
 
 ## Lo que viene
 
-- [ ] **Compras**: proveedores, pedidos y albaranes de entrada que generan lotes.
-- [ ] Casos de uso en `application`.
-- [ ] **API REST** y persistencia.
+- [x] **Catálogo de productos**: dominio, casos de uso, API y PostgreSQL.
+- [ ] **Recepción de género**: albaranes de entrada que generan lotes.
+- [ ] **Recetas y escandallo** por API, con coste por ración.
+- [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
-- [ ] Coste unitario sin redondeo intermedio.
+- [ ] Pendientes técnicos: cantidades en `BigDecimal` y con unidad, lotes
+  reconstruibles desde la base de datos, coste unitario sin redondeo
+  intermedio, excepción de validación propia del dominio y Spring Boot al día.
 
 ## Notas
 
 - Las categorías ya separan bebidas y alcohol pensando en un futuro TPV.
-- `consumeProduct` es `synchronized`: dos consumos a la vez sobre el mismo
-  inventario no se pisan.
+- Una migración ya aplicada no se toca nunca: los cambios van en una nueva.
 
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:ffd59e,50:ffb38a,100:ff8a80&height=80&section=footer"/>

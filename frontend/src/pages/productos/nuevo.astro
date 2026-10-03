@@ -1,0 +1,139 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import AllergenIcon from '../../components/AllergenIcon.astro';
+import { ApiError, createProduct } from '../../lib/api';
+import {
+  ALLERGENS,
+  ALLERGEN_LABELS,
+  CATEGORIES,
+  CATEGORY_STYLES,
+  UNITS,
+  UNIT_LABELS,
+  type Allergen,
+  type Category,
+  type Unit,
+} from '../../lib/catalog';
+
+let error: string | null = null;
+let values = {
+  name: '',
+  description: '',
+  category: 'VEGETABLE' as Category,
+  unit: 'KILOGRAM' as Unit,
+  allergens: [] as Allergen[],
+};
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  values = {
+    name: String(form.get('name') ?? ''),
+    description: String(form.get('description') ?? ''),
+    category: String(form.get('category')) as Category,
+    unit: String(form.get('unit')) as Unit,
+    allergens: form.getAll('allergens').map(String) as Allergen[],
+  };
+  try {
+    const product = await createProduct(API_URL, {
+      name: values.name,
+      description: values.description || undefined,
+      category: values.category,
+      unit: values.unit,
+      allergens: values.allergens,
+    });
+    return Astro.redirect(`/?creado=${encodeURIComponent(product.name)}`);
+  } catch (e) {
+    error =
+      e instanceof ApiError
+        ? `La API ha rechazado el producto: ${e.message}`
+        : 'No se puede conectar con la API. ¿Está arrancada?';
+  }
+}
+
+const field =
+  'mt-1.5 w-full rounded-xl border-0 bg-white px-4 py-2.5 text-stone-900 shadow-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brasa focus:outline-none';
+---
+
+<Layout title="Nuevo producto">
+  <a href="/" class="text-sm font-semibold text-stone-500 hover:text-stone-800">← Volver al catálogo</a>
+  <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-stone-900">Nuevo producto</h1>
+
+  {
+    error && (
+      <p class="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 ring-1 ring-red-200">{error}</p>
+    )
+  }
+
+  <form method="post" class="mt-8 grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+    <div class="space-y-5">
+      <label class="block">
+        <span class="text-sm font-semibold text-stone-700">Nombre</span>
+        <input name="name" required pattern=".*\S.*" maxlength="100" value={values.name} class={field} />
+      </label>
+
+      <label class="block">
+        <span class="text-sm font-semibold text-stone-700">Descripción <span class="font-normal text-stone-400">(opcional)</span></span>
+        <textarea name="description" rows="3" class={field}>{values.description}</textarea>
+      </label>
+
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block">
+          <span class="text-sm font-semibold text-stone-700">Categoría</span>
+          <select name="category" class={field}>
+            {
+              CATEGORIES.map((category) => (
+                <option value={category} selected={category === values.category}>
+                  {CATEGORY_STYLES[category].label}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-semibold text-stone-700">Unidad</span>
+          <select name="unit" class={field}>
+            {
+              UNITS.map((unit) => (
+                <option value={unit} selected={unit === values.unit}>
+                  {UNIT_LABELS[unit]}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend class="text-sm font-semibold text-stone-700">Alérgenos</legend>
+      <p class="text-xs text-stone-500">Marca todos los que contenga el producto.</p>
+      <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {
+          ALLERGENS.map((allergen) => (
+            <label class="flex cursor-pointer items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition select-none hover:ring-stone-300 has-[:checked]:bg-orange-50 has-[:checked]:text-stone-900 has-[:checked]:ring-2 has-[:checked]:ring-brasa">
+              <input
+                type="checkbox"
+                name="allergens"
+                value={allergen}
+                checked={values.allergens.includes(allergen)}
+                class="sr-only"
+              />
+              <AllergenIcon allergen={allergen} size={28} />
+              {ALLERGEN_LABELS[allergen]}
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <div class="lg:col-span-2">
+      <button
+        type="submit"
+        class="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
+      >
+        Guardar producto
+      </button>
+    </div>
+  </form>
+</Layout>

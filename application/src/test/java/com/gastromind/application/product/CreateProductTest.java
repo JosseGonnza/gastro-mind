@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("CreateProduct debería")
 class CreateProductTest {
@@ -40,5 +41,21 @@ class CreateProductTest {
         assertThat(created.getName()).isEqualTo("Pan de semillas");
         assertThat(created.getAllergens()).containsExactlyInAnyOrder(Allergen.GLUTEN, Allergen.SESAME);
         assertThat(productRepository.findById(created.getId())).containsSame(created);
+    }
+
+    @Test
+    @DisplayName("no guardar nada si el producto no es válido")
+    void shouldNotSaveInvalidProduct() {
+        CreateProductCommand command = new CreateProductCommand(
+                " ",
+                null,
+                Category.BAKERY,
+                UnitOfMeasure.UNIT,
+                Set.of()
+        );
+
+        assertThatThrownBy(() -> createProduct.execute(command))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(productRepository.findAll()).isEmpty();
     }
 }

@@ -96,4 +96,26 @@ class ProductControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Product not found: " + unknownId));
     }
+
+    @Test
+    @DisplayName("listar los productos ordenados por nombre")
+    void shouldListProductsSortedByName() throws Exception {
+        createProduct("Tomate", "VEGETABLE", "KILOGRAM");
+        createProduct("Ñora", "SPICE", "UNIT");
+        createProduct("aceite de oliva", "SAUCE", "LITER");
+
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", contains("aceite de oliva", "Ñora", "Tomate")));
+    }
+
+    private void createProduct(String name, String category, String unit) throws Exception {
+        String json = """
+                {"name": "%s", "category": "%s", "unit": "%s"}
+                """.formatted(name, category, unit);
+        mockMvc.perform(post("/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated());
+    }
 }

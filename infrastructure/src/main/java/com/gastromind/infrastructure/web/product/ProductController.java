@@ -2,6 +2,7 @@ package com.gastromind.infrastructure.web.product;
 
 import com.gastromind.application.product.CreateProduct;
 import com.gastromind.application.product.GetProduct;
+import com.gastromind.application.product.ListProducts;
 import com.gastromind.domain.entity.Product;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,10 +23,12 @@ public class ProductController {
 
     private final CreateProduct createProduct;
     private final GetProduct getProduct;
+    private final ListProducts listProducts;
 
-    public ProductController(CreateProduct createProduct, GetProduct getProduct) {
+    public ProductController(CreateProduct createProduct, GetProduct getProduct, ListProducts listProducts) {
         this.createProduct = createProduct;
         this.getProduct = getProduct;
+        this.listProducts = listProducts;
     }
 
     @PostMapping
@@ -35,6 +39,13 @@ public class ProductController {
                 .buildAndExpand(product.getId())
                 .toUri();
         return ResponseEntity.created(location).body(ProductResponse.from(product));
+    }
+
+    @GetMapping
+    public List<ProductResponse> list() {
+        return listProducts.execute().stream()
+                .map(ProductResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")

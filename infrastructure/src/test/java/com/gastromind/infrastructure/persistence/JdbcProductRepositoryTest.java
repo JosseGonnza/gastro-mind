@@ -124,4 +124,12 @@ class JdbcProductRepositoryTest {
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(rice, bread, tomato);
     }
+
+    @Test
+    @DisplayName("devolver una lista vacía si no hay productos")
+    void shouldReturnEmptyListWhenThereAreNoProducts() {
+        List<Product> products = productRepository.findAll();
+
+        assertThat(products).isEmpty();
+    }
 }

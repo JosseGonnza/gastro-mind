@@ -15,9 +15,12 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.UUID;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,5 +69,31 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.category").value("BAKERY"))
                 .andExpect(jsonPath("$.unit").value("UNIT"))
                 .andExpect(jsonPath("$.allergens", containsInAnyOrder("GLUTEN", "SESAME")));
+    }
+
+    @Test
+    @DisplayName("consultar un producto por su id")
+    void shouldGetProductById() throws Exception {
+        String location = mockMvc.perform(post("/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(BREAD_JSON))
+                .andReturn()
+                .getResponse()
+                .getHeader("Location");
+
+        mockMvc.perform(get(location))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Pan de semillas"))
+                .andExpect(jsonPath("$.allergens", contains("GLUTEN", "SESAME")));
+    }
+
+    @Test
+    @DisplayName("responder 404 si el producto no existe")
+    void shouldReturnNotFoundWhenProductDoesNotExist() throws Exception {
+        UUID unknownId = UUID.randomUUID();
+
+        mockMvc.perform(get("/products/{id}", unknownId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Product not found: " + unknownId));
     }
 }

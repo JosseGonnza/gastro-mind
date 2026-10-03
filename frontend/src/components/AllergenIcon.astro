@@ -1,0 +1,48 @@
+---
+import { ALLERGEN_LABELS, type Allergen } from '../lib/catalog';
+import celery from '../assets/allergens/celery.svg';
+import crustaceans from '../assets/allergens/crustaceans.svg';
+import dairy from '../assets/allergens/dairy.svg';
+import eggs from '../assets/allergens/eggs.svg';
+import fish from '../assets/allergens/fish.svg';
+import gluten from '../assets/allergens/gluten.svg';
+import lupin from '../assets/allergens/lupin.svg';
+import molluscs from '../assets/allergens/molluscs.svg';
+import mustard from '../assets/allergens/mustard.svg';
+import nuts from '../assets/allergens/nuts.svg';
+import peanuts from '../assets/allergens/peanuts.svg';
+import sesame from '../assets/allergens/sesame.svg';
+import soybeans from '../assets/allergens/soybeans.svg';
+import sulfites from '../assets/allergens/sulfites.svg';
+
+const ICONS = {
+  GLUTEN: gluten,
+  CRUSTACEANS: crustaceans,
+  EGGS: eggs,
+  FISH: fish,
+  PEANUTS: peanuts,
+  SOYBEANS: soybeans,
+  DAIRY: dairy,
+  NUTS: nuts,
+  CELERY: celery,
+  MUSTARD: mustard,
+  SESAME: sesame,
+  SULFITES: sulfites,
+  LUPIN: lupin,
+  MOLLUSCS: molluscs,
+} satisfies Record<Allergen, unknown>;
+
+interface Props {
+  allergen: Allergen;
+  size?: number;
+}
+
+const { allergen, size = 24 } = Astro.props;
+const Icon = ICONS[allergen];
+const label = ALLERGEN_LABELS[allergen];
+---
+
+<span title={label} class="inline-flex shrink-0">
+  <Icon width={size} height={size} aria-hidden="true" />
+  <span class="sr-only">{label}</span>
+</span>

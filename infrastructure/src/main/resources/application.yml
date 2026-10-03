@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: gastro-mind
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gastromind
+    username: gastromind
+    password: gastromind

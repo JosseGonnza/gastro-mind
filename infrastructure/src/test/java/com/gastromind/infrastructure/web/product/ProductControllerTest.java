@@ -109,6 +109,18 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$[*].name", contains("aceite de oliva", "Ñora", "Tomate")));
     }
 
+    @Test
+    @DisplayName("responder 400 si el producto no es válido")
+    void shouldReturnBadRequestWhenProductIsInvalid() throws Exception {
+        mockMvc.perform(post("/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name": " ", "category": "BAKERY", "unit": "UNIT"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Product name cannot be empty"));
+    }
+
     private void createProduct(String name, String category, String unit) throws Exception {
         String json = """
                 {"name": "%s", "category": "%s", "unit": "%s"}

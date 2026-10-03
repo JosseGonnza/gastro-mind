@@ -7,6 +7,10 @@
 > Responde a tres preguntas de cualquier cocina: qué hay en cámara, qué hay
 > que gastar primero y cuánto cuesta de verdad cada plato.
 
+![El catálogo de productos con sus categorías y alérgenos](docs/captura-catalogo.png)
+
+<sub>Datos de ejemplo cargados con <code>scripts/datos-ejemplo.sh</code>.</sub>
+
 Todas las cocinas hacen escandallos, pero casi siempre con un precio medio
 apuntado en un Excel que se queda viejo con la siguiente factura del proveedor.
 Gastro Mind calcula el coste con lo que costó de verdad cada lote que se gasta,
@@ -14,7 +18,7 @@ y gasta primero lo que caduca antes, como en una cámara bien llevada.
 
 Está en desarrollo y crece por funcionalidades completas: cada una atraviesa
 dominio, casos de uso, API y base de datos antes de empezar la siguiente. La
-primera, el **catálogo de productos**, ya funciona de punta a punta.
+primera, el **catálogo de productos**, ya funciona de punta a punta, con su web.
 
 ## Cómo calcula
 
@@ -56,6 +60,16 @@ de ese arroz es **24 €**, no un precio medio.
 Lotes, stock, recetas y escandallo viven por ahora solo en el dominio: llegarán
 a la API en las próximas funcionalidades.
 
+## La web
+
+- **🗂️ Catálogo** — una tarjeta por producto con el color de su categoría, su
+  unidad y sus alérgenos como iconos, ordenado como en español.
+- **➕ Nuevo producto** — formulario con los 14 alérgenos como fichas que se
+  marcan con un toque. Si la API rechaza el producto, el formulario lo dice y
+  conserva lo escrito.
+- Funciona sin JavaScript en el navegador: las páginas se generan en el
+  servidor y los formularios son HTML de toda la vida.
+
 ## La API
 
 | Método | Ruta | Qué hace | Respuesta |
@@ -81,25 +95,45 @@ a la API en las próximas funcionalidades.
   `ResultSet`, con transacciones explícitas y sin ORM.
 - **PostgreSQL 16** con migraciones **Flyway** versionadas en
   `infrastructure/src/main/resources/db/migration`.
+- **`frontend/`: Astro 5 + Tailwind 4 + TypeScript** con renderizado en
+  servidor (adaptador Node). Las páginas llaman a la API desde el servidor, así
+  que no hace falta CORS.
+- **Iconos de alérgenos** de [Fluent Emoji](https://github.com/microsoft/fluentui-emoji)
+  (Microsoft, MIT), más dos dibujados a mano en el mismo estilo: mostaza y
+  sésamo, que no existen en ningún set libre.
 - **TDD de principio a fin**: cada regla nace de un test en rojo, y el
   historial de commits lo cuenta.
-- **102 tests** (JUnit 5 + AssertJ): unitarios en el dominio y los casos de
-  uso, y de integración contra un **PostgreSQL real** gracias a
+- **102 tests en el backend** (JUnit 5 + AssertJ): unitarios en el dominio y
+  los casos de uso, y de integración contra un **PostgreSQL real** gracias a
   **Testcontainers**. Los nombres en español se leen como reglas del negocio:
-  *«CostingService debería calcular el coste con múltiples lotes»*.
-- **Integración continua** con GitHub Actions: cada push a `main` pasa todos
-  los tests.
+  *«CostingService debería calcular el coste con múltiples lotes»*. En el
+  front, **Vitest** prueba el cliente de la API.
+- **Integración continua** con GitHub Actions: cada push a `main` pasa los
+  tests del backend y los tests, tipos y compilación del front.
 
 ## Correrlo en local
 
-Requisitos: Java 21, Maven y Docker.
+Requisitos: Java 21, Maven, Docker y Node 22 o superior.
 
 ```sh
 docker compose up -d                                          # PostgreSQL
 mvn verify                                                    # tests (necesita Docker)
 mvn -DskipTests package                                       # construir
 java -jar infrastructure/target/infrastructure-0.0.1-SNAPSHOT.jar   # API en :8080
+./scripts/datos-ejemplo.sh                                    # productos de ejemplo
 ```
+
+Y en otra terminal, la web:
+
+```sh
+cd frontend
+npm install
+npm run dev      # http://localhost:4321
+npm test         # tests
+```
+
+La web busca la API en `http://localhost:8080`. Para otra dirección, define
+`API_URL`.
 
 ## Probarla
 
@@ -126,5 +160,7 @@ curl localhost:8080/products
 
 - Las categorías ya separan bebidas y alcohol pensando en un futuro TPV.
 - Una migración ya aplicada no se toca nunca: los cambios van en una nueva.
+- La web solo acepta formularios de los dominios de `security.allowedDomains`
+  (`frontend/astro.config.mjs`). Al desplegarla, hay que añadir el dominio real.
 
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:ffd59e,50:ffb38a,100:ff8a80&height=80&section=footer"/>

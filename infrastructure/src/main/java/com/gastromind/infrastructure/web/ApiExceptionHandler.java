@@ -13,4 +13,9 @@ public class ApiExceptionHandler {
     ProblemDetail handleProductNotFound(ProductNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ProblemDetail handleInvalidInput(IllegalArgumentException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
 }

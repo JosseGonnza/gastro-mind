@@ -126,6 +126,22 @@ class JdbcProductRepositoryTest {
     }
 
     @Test
+    @DisplayName("ordenar los nombres como en español: sin distinguir mayúsculas, con tildes y eñes en su sitio")
+    void shouldSortProductNamesInSpanish() {
+        productRepository.save(Product.create("Tomate", null, Category.VEGETABLE, UnitOfMeasure.KILOGRAM, Set.of()));
+        productRepository.save(Product.create("Óregano", null, Category.SPICE, UnitOfMeasure.GRAM, Set.of()));
+        productRepository.save(Product.create("Ñora", null, Category.SPICE, UnitOfMeasure.UNIT, Set.of()));
+        productRepository.save(Product.create("Nata", null, Category.DAIRY, UnitOfMeasure.LITER, Set.of(Allergen.DAIRY)));
+        productRepository.save(Product.create("aceite de oliva", null, Category.SAUCE, UnitOfMeasure.LITER, Set.of()));
+
+        List<Product> products = productRepository.findAll();
+
+        assertThat(products)
+                .extracting(Product::getName)
+                .containsExactly("aceite de oliva", "Nata", "Ñora", "Óregano", "Tomate");
+    }
+
+    @Test
     @DisplayName("devolver una lista vacía si no hay productos")
     void shouldReturnEmptyListWhenThereAreNoProducts() {
         List<Product> products = productRepository.findAll();

@@ -12,7 +12,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +40,15 @@ public class JdbcProductRepository implements ProductRepository {
             LEFT JOIN product_allergen a ON a.product_id = p.id
             WHERE p.id = ?
             GROUP BY p.id, p.name, p.description, p.category, p.unit
+            """;
+
+    private static final String SELECT_ALL = """
+            SELECT p.id, p.name, p.description, p.category, p.unit,
+                   STRING_AGG(a.allergen, ',') AS allergens
+            FROM product p
+            LEFT JOIN product_allergen a ON a.product_id = p.id
+            GROUP BY p.id, p.name, p.description, p.category, p.unit
+            ORDER BY p.name
             """;
 
     private final DataSource dataSource;
@@ -75,6 +86,21 @@ public class JdbcProductRepository implements ProductRepository {
             }
         } catch (SQLException e) {
             throw new RepositoryException("Could not find product " + id, e);
+        }
+    }
+
+    @Override
+    public List<Product> findAll() {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SELECT_ALL);
+             ResultSet resultSet = statement.executeQuery()) {
+            List<Product> products = new ArrayList<>();
+            while (resultSet.next()) {
+                products.add(toProduct(resultSet));
+            }
+            return products;
+        } catch (SQLException e) {
+            throw new RepositoryException("Could not list products", e);
         }
     }
 

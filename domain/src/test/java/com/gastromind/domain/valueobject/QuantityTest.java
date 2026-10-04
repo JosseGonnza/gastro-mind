@@ -1,5 +1,6 @@
 package com.gastromind.domain.valueobject;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -130,5 +131,12 @@ class QuantityTest {
     void shouldNotUseScientificNotation() {
         assertThat(Quantity.of(50, GRAM).amount().toString()).isEqualTo("50");
         assertThat(Quantity.of(new BigDecimal("1500.00"), MILLILITER).amount().toString()).isEqualTo("1500");
+    }
+
+    @Test
+    @DisplayName("Avisar con una excepción de validación del dominio si la cantidad no es válida")
+    void shouldThrowDomainValidationException() {
+        assertThatThrownBy(() -> Quantity.of(-1.0, GRAM))
+                .isInstanceOf(DomainValidationException.class);
     }
 }

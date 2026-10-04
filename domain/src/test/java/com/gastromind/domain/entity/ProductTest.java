@@ -1,5 +1,6 @@
 package com.gastromind.domain.entity;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.Allergen;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.UnitOfMeasure;
@@ -117,5 +118,13 @@ class ProductTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Unit cannot be null");
         }
+    }
+
+    @Test
+    @DisplayName("Avisar con una excepción de validación del dominio si los datos no son válidos")
+    void shouldThrowDomainValidationException() {
+        assertThatThrownBy(() -> Product.create(" ", VALID_DESC, VALID_CATEGORY, VALID_UNIT, Set.of()))
+                .isInstanceOf(DomainValidationException.class)
+                .hasMessage("Product name cannot be empty");
     }
 }

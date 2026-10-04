@@ -159,9 +159,8 @@ curl localhost:8080/products
 - [ ] **Recetas y escandallo** por API, con coste por ración.
 - [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
-- [ ] Pendientes técnicos: lotes reconstruibles desde la base de datos, coste
-  unitario sin redondeo intermedio y excepción de validación propia del
-  dominio.
+- [ ] Pendientes técnicos: coste unitario sin redondeo intermedio y excepción
+  de validación propia del dominio.
 
 ## Notas
 

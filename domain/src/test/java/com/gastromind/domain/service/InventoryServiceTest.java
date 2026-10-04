@@ -57,6 +57,20 @@ class InventoryServiceTest {
         }
 
         @Test
+        @DisplayName("fallar si algún lote es de otro producto")
+        void shouldFailWhenABatchBelongsToAnotherProduct() {
+            Product sugar = Product.create("Azúcar", "Blanca", Category.DESSERT, UnitOfMeasure.GRAM, Set.of());
+            List<Batch> batches = List.of(
+                    Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0, UnitOfMeasure.GRAM)),
+                    Batch.create(sugar, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(5.0, UnitOfMeasure.GRAM))
+            );
+
+            assertThatThrownBy(() -> inventoryService.calculateCurrentStock(product, batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("All batches must belong to the product");
+        }
+
+        @Test
         @DisplayName("fallar con un producto nulo")
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of(
@@ -202,6 +216,21 @@ class InventoryServiceTest {
             assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(1, UnitOfMeasure.UNIT), batches))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Quantity unit must be compatible with product unit");
+        }
+
+        @Test
+        @DisplayName("no consumir nada si algún lote es de otro producto")
+        void shouldNotConsumeWhenABatchBelongsToAnotherProduct() {
+            Product sugar = Product.create("Azúcar", "Blanca", Category.DESSERT, UnitOfMeasure.GRAM, Set.of());
+            Batch ownBatch = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0, UnitOfMeasure.GRAM));
+            Batch foreignBatch = Batch.create(sugar, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(50.0), Quantity.of(5.0, UnitOfMeasure.GRAM));
+            List<Batch> batches = new ArrayList<>(List.of(ownBatch, foreignBatch));
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(3.0, UnitOfMeasure.GRAM), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("All batches must belong to the product");
+            assertThat(ownBatch.getCurrentQuantity()).isEqualTo(Quantity.of(10.0, UnitOfMeasure.GRAM));
+            assertThat(foreignBatch.getCurrentQuantity()).isEqualTo(Quantity.of(5.0, UnitOfMeasure.GRAM));
         }
 
         @Test

@@ -149,6 +149,19 @@ class CostingServiceTest {
         }
 
         @Test
+        @DisplayName("lanzar excepción si algún lote es de otro producto")
+        void shouldThrowExceptionWhenABatchBelongsToAnotherProduct() {
+            List<Batch> batches = new ArrayList<>(List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM)),
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
+            ));
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("All batches must belong to the product");
+        }
+
+        @Test
         @DisplayName("lanzar excepción si el producto es null")
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of();

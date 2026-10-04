@@ -27,8 +27,8 @@ public class Batch {
         this.entryDate = entryDate;
         this.expirationDate = expirationDate;
         this.purchasePrice = purchasePrice;
-        this.initialQuantity = initialQuantity;
-        this.currentQuantity = initialQuantity;
+        this.initialQuantity = initialQuantity.to(product.getUnit());
+        this.currentQuantity = this.initialQuantity;
     }
 
     public static Batch create(Product product, String sku, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
@@ -61,6 +61,9 @@ public class Batch {
         if (sku == null || sku.isBlank()) throw new IllegalArgumentException("SKU cannot be empty");
         if (purchasePrice == null) throw new IllegalArgumentException("Price cannot be null");
         if (initialQuantity == null) throw new IllegalArgumentException("Initial quantity cannot be null");
+        if (!initialQuantity.unit().isConvertibleTo(product.getUnit())) {
+            throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
+        }
         if (expirationDate == null) throw new IllegalArgumentException("Expiration date cannot be null");
         if (expirationDate.isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Cannot accept expired products");

@@ -64,6 +64,10 @@ a la API en las próximas funcionalidades.
 
 - **🗂️ Catálogo** — una tarjeta por producto con el color de su categoría, su
   unidad y sus alérgenos como iconos, ordenado como en español.
+- **🚫 Filtro por alérgenos** — tocas los que hay que evitar (uno o varios) y el
+  catálogo deja solo lo que no lleva ninguno: *«Apto sin gluten y lácteos: 8 de
+  12 productos»*. El filtro va en la URL (`/?sin=GLUTEN&sin=DAIRY`), así que se
+  puede compartir.
 - **➕ Nuevo producto** — formulario con los 14 alérgenos como fichas que se
   marcan con un toque. Si la API rechaza el producto, el formulario lo dice y
   conserva lo escrito.
@@ -107,7 +111,7 @@ a la API en las próximas funcionalidades.
   los casos de uso, y de integración contra un **PostgreSQL real** gracias a
   **Testcontainers**. Los nombres en español se leen como reglas del negocio:
   *«CostingService debería calcular el coste con múltiples lotes»*. En el
-  front, **Vitest** prueba el cliente de la API.
+  front, **Vitest** prueba el cliente de la API y el filtro de alérgenos.
 - **Integración continua** con GitHub Actions: cada push a `main` pasa los
   tests del backend y los tests, tipos y compilación del front.
 

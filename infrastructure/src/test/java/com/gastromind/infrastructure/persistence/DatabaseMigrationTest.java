@@ -35,6 +35,12 @@ class DatabaseMigrationTest {
         assertThat(tableExists("product_allergen")).isTrue();
     }
 
+    @Test
+    @DisplayName("tener la tabla de proveedores")
+    void shouldHaveSupplierTable() throws SQLException {
+        assertThat(tableExists("supplier")).isTrue();
+    }
+
     private boolean tableExists(String tableName) throws SQLException {
         String sql = """
                 SELECT EXISTS (

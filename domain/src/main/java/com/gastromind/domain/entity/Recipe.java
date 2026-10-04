@@ -6,6 +6,7 @@ import com.gastromind.domain.valueobject.RecipeStep;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -104,10 +105,10 @@ public class Recipe {
     }
 
     public List<RecipeIngredient> getIngredients() {
-        return ingredients;
+        return Collections.unmodifiableList(ingredients);
     }
 
     public List<RecipeStep> getSteps() {
-        return steps;
+        return Collections.unmodifiableList(steps);
     }
 }

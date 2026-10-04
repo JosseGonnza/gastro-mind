@@ -126,6 +126,29 @@ class CostingServiceTest {
         }
 
         @Test
+        @DisplayName("calcular el coste de una cantidad expresada en otra unidad")
+        void shouldCalculateCostOfQuantityInAnotherUnit() {
+            Batch batch = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(500, UnitOfMeasure.GRAM), batches);
+
+            assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("1.00"));
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad está en una unidad que no casa con la del producto")
+        void shouldThrowExceptionWhenQuantityUnitIsIncompatible() {
+            List<Batch> batches = new ArrayList<>(List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM))
+            ));
+
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(2, UnitOfMeasure.BUNCH), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity unit must be compatible with product unit");
+        }
+
+        @Test
         @DisplayName("lanzar excepción si el producto es null")
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of();

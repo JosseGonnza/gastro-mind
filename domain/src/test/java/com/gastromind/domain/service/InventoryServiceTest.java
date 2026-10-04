@@ -182,6 +182,29 @@ class InventoryServiceTest {
         }
 
         @Test
+        @DisplayName("consumir una cantidad expresada en otra unidad de la misma magnitud")
+        void shouldConsumeQuantityInAnotherCompatibleUnit() {
+            Batch batch = Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(2, UnitOfMeasure.KILOGRAM));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            inventoryService.consumeProduct(product, Quantity.of(0.5, UnitOfMeasure.KILOGRAM), batches);
+
+            assertThat(batch.getCurrentQuantity()).isEqualTo(Quantity.of(1500, UnitOfMeasure.GRAM));
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si la cantidad está en una unidad que no casa con la del producto")
+        void shouldThrowExceptionWhenQuantityUnitIsIncompatible() {
+            List<Batch> batches = new ArrayList<>(List.of(
+                    Batch.create(product, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(50.0), Quantity.of(10.0, UnitOfMeasure.GRAM))
+            ));
+
+            assertThatThrownBy(() -> inventoryService.consumeProduct(product, Quantity.of(1, UnitOfMeasure.UNIT), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Quantity unit must be compatible with product unit");
+        }
+
+        @Test
         @DisplayName("lanzar excepción si el producto es null")
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of();

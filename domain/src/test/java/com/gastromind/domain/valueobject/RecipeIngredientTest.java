@@ -45,4 +45,20 @@ class RecipeIngredientTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Quantity cannot be null");
     }
+
+    @Test
+    @DisplayName("Aceptar una cantidad en otra unidad de la misma magnitud")
+    void shouldAcceptQuantityInCompatibleUnit() {
+        var ingredient = RecipeIngredient.of(rice, Quantity.of(0.4, UnitOfMeasure.KILOGRAM));
+
+        assertThat(ingredient.quantity()).isEqualTo(Quantity.of(0.4, UnitOfMeasure.KILOGRAM));
+    }
+
+    @Test
+    @DisplayName("No permitir una cantidad en una unidad que no casa con la del producto")
+    void shouldThrowExceptionWhenQuantityUnitIsIncompatible() {
+        assertThatThrownBy(() -> RecipeIngredient.of(rice, Quantity.of(2, UnitOfMeasure.BUNCH)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Quantity unit must be compatible with product unit");
+    }
 }

@@ -14,8 +14,11 @@ public record Quantity(BigDecimal amount, UnitOfMeasure unit) {
         if (amount.signum() < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
-        //Sin ceros sobrantes, 2.50 kg y 2.5 kg son la misma cantidad
+        //Sin ceros sobrantes, 2.50 kg y 2.5 kg son la misma cantidad; y 50 no se queda en 5E+1
         amount = amount.stripTrailingZeros();
+        if (amount.scale() < 0) {
+            amount = amount.setScale(0);
+        }
     }
 
     public static Quantity of(BigDecimal amount, UnitOfMeasure unit) {

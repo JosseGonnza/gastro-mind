@@ -18,7 +18,7 @@ public class CostingService {
     public Money calculateIngredientCost(Product product, Quantity quantity, List<Batch> batches) {
         validateIngredientsCostInputs(product, quantity, batches);
 
-        Quantity availableStock = calculateAvailableStock(batches);
+        Quantity availableStock = calculateAvailableStock(product, batches);
         if (!availableStock.hasEnough(quantity)) {
             throw new NotEnoughStockException(product, quantity, availableStock);
         }
@@ -44,35 +44,37 @@ public class CostingService {
 
     private static List<Batch> getSortedBatches(List<Batch> batches) {
         return batches.stream()
-                .filter(batch -> batch.getCurrentQuantity().value() > 0)
+                .filter(batch -> !batch.getCurrentQuantity().isZero())
                 .sorted(Comparator.comparing(Batch::getExpirationDate))
                 .toList();
     }
 
     private static Money calculateWeightedCost(Quantity quantity, List<Batch> sortedBatches) {
         BigDecimal totalAccumulatedCost = BigDecimal.ZERO;
-        double remainingNeeded = quantity.value();
+        Quantity remainingNeeded = quantity;
         Currency currency = sortedBatches.getFirst().getPurchasePrice().currency();
 
         for (Batch batch : sortedBatches) {
-            if (remainingNeeded <= 0) break;
+            if (remainingNeeded.isZero()) break;
 
-            double batchCurrentQuantity = batch.getCurrentQuantity().value();
+            Quantity batchCurrentQuantity = batch.getCurrentQuantity();
             // Determinamos cuánto cogemos de este lote: lo que necesitamos O lo que hay (el menor de los dos)
-            double amountToTake = Math.min(remainingNeeded, batchCurrentQuantity);
+            Quantity amountToTake = batchCurrentQuantity.hasEnough(remainingNeeded)
+                    ? remainingNeeded.to(batchCurrentQuantity.unit())
+                    : batchCurrentQuantity;
             BigDecimal batchUnitCost = batch.getUnitCost().amount();
-            BigDecimal chunkCost = batchUnitCost.multiply(BigDecimal.valueOf(amountToTake));
+            BigDecimal chunkCost = batchUnitCost.multiply(amountToTake.amount());
 
             totalAccumulatedCost = totalAccumulatedCost.add(chunkCost);
-            remainingNeeded -= amountToTake;
+            remainingNeeded = remainingNeeded.subtract(amountToTake);
         }
         return new Money(totalAccumulatedCost, currency);
     }
 
-    private static Quantity calculateAvailableStock(List<Batch> batches) {
-        return Quantity.of(batches.stream()
-                .mapToDouble(batch -> batch.getCurrentQuantity().value())
-                .sum());
+    private static Quantity calculateAvailableStock(Product product, List<Batch> batches) {
+        return batches.stream()
+                .map(Batch::getCurrentQuantity)
+                .reduce(Quantity.zero(product.getUnit()), Quantity::add);
     }
 
     private static void validateIngredientsCostInputs(Product product, Quantity quantity, List<Batch> batches) {
@@ -82,7 +84,7 @@ public class CostingService {
         if (quantity == null) {
             throw new IllegalArgumentException("Quantity cannot be null");
         }
-        if (quantity.value() <= 0) {
+        if (quantity.isZero()) {
             throw new IllegalArgumentException("Quantity must be greater than zero");
         }
         if (batches == null) {

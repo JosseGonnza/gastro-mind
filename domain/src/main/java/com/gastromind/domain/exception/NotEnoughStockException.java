@@ -14,8 +14,8 @@ public class NotEnoughStockException extends RuntimeException{
         super(String.format(
                 "Not enough stock for product %s. Requested: %s, Available: %s",
                 product.getName(),
-                requested.value(),
-                available.value()
+                requested,
+                available
         ));
         this.product = product;
         this.requested = requested;

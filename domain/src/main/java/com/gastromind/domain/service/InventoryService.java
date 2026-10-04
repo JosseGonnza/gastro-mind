@@ -15,12 +15,11 @@ public class InventoryService {
             throw new IllegalArgumentException("Product cannot be null");
         }
         if (batches == null || batches.isEmpty()) {
-            return Quantity.of(0);
+            return Quantity.zero(product.getUnit());
         }
-        return Quantity.of(batches.stream()
-                .mapToDouble(batch -> batch.getCurrentQuantity().value())
-                .sum()
-        );
+        return batches.stream()
+                .map(Batch::getCurrentQuantity)
+                .reduce(Quantity.zero(product.getUnit()), Quantity::add);
     }
 
     //Con synchronized aseguramos la atomicidad y que solo un hilo ejecute el bloque a la vez
@@ -36,21 +35,21 @@ public class InventoryService {
             throw new NotEnoughStockException(product, amountToConsume, availableToConsume);
         }
         List<Batch> sortedBatches = batches.stream()
-                .filter(batch -> batch.getCurrentQuantity().value() > 0)
+                .filter(batch -> !batch.getCurrentQuantity().isZero())
                 .sorted(Comparator.comparing(Batch::getExpirationDate))
                 .toList();
-        double remainingToConsume = amountToConsume.value();
+        Quantity remainingToConsume = amountToConsume;
         for (Batch batch : sortedBatches) {
-            if (remainingToConsume <= 0) {
+            if (remainingToConsume.isZero()) {
                 break;
             }
-            double batchStock = batch.getCurrentQuantity().value();
-            if (batchStock >= remainingToConsume) {
-                batch.consume(Quantity.of(remainingToConsume));
-                remainingToConsume = 0;
+            Quantity batchStock = batch.getCurrentQuantity();
+            if (batchStock.hasEnough(remainingToConsume)) {
+                batch.consume(remainingToConsume);
+                remainingToConsume = Quantity.zero(remainingToConsume.unit());
             } else {
-                batch.consume(Quantity.of(batchStock));
-                remainingToConsume -= batchStock;
+                batch.consume(batchStock);
+                remainingToConsume = remainingToConsume.subtract(batchStock);
             }
         }
     }
@@ -62,7 +61,7 @@ public class InventoryService {
         if (amountToConsume == null) {
             throw new IllegalArgumentException("Amount to consume cannot be null");
         }
-        if (amountToConsume.value() <= 0) {
+        if (amountToConsume.isZero()) {
             throw new IllegalArgumentException("Amount to consume must be greater than zero");
         }
         if (batches == null) {

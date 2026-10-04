@@ -62,10 +62,10 @@ class CostingServiceTest {
         @Test
         @DisplayName("calcular el coste con un lote")
         void shouldCalculateCostWithSingleBatch() {
-            Batch batch = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0));
+            Batch batch = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM));
             List<Batch> batches = new ArrayList<>(List.of(batch));
 
-            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.0), batches);
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM), batches);
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("6.00"));
             assertThat(cost.currency().getCurrencyCode()).isEqualTo("EUR");
@@ -75,12 +75,12 @@ class CostingServiceTest {
         @DisplayName("calcular el coste con múltiples lotes")
         void shouldCalculateCostWithSeveralBatches() {
             Batch batch1 = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(5),
-                    Money.of(20.0), Quantity.of(2.0));
+                    Money.of(20.0), Quantity.of(2.0, UnitOfMeasure.KILOGRAM));
             Batch batch2 = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
-                    Money.of(10.0), Quantity.of(5.0));
+                    Money.of(10.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM));
             List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
 
-            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(4.0), batches);
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(4.0, UnitOfMeasure.KILOGRAM), batches);
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("24.00"));
         }
@@ -89,12 +89,12 @@ class CostingServiceTest {
         @DisplayName("calcular el coste exacto agotando los lotes")
         void shouldCalculateCostExhaustingAllBatches() {
             Batch batch1 = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(5),
-                    Money.of(6.0), Quantity.of(2.0));
+                    Money.of(6.0), Quantity.of(2.0, UnitOfMeasure.KILOGRAM));
             Batch batch2 = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
-                    Money.of(6.0), Quantity.of(3.0));
+                    Money.of(6.0), Quantity.of(3.0, UnitOfMeasure.KILOGRAM));
             List<Batch> batches = new ArrayList<>(List.of(batch1, batch2));
 
-            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(5.0), batches);
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(5.0, UnitOfMeasure.KILOGRAM), batches);
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("12.00"));
         }
@@ -103,24 +103,24 @@ class CostingServiceTest {
         @DisplayName("lanzar excepción si no hay suficiente stock")
         void shouldThrowExceptionWhenInsufficientStock() {
             Batch batch = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
-                    Money.of(6.0), Quantity.of(3.0));
+                    Money.of(6.0), Quantity.of(3.0, UnitOfMeasure.KILOGRAM));
             List<Batch> batches = new ArrayList<>(List.of(batch));
 
-            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0), batches))
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0, UnitOfMeasure.KILOGRAM), batches))
                     .isInstanceOf(NotEnoughStockException.class)
                     .hasMessageContaining("Not enough stock for product Arroz Bomba")
-                    .hasMessageContaining("Requested: 5.0")
-                    .hasMessageContaining("Available: 3.0");
+                    .hasMessageContaining("Requested: 5 kg")
+                    .hasMessageContaining("Available: 3 kg");
         }
 
         @Test
         @DisplayName("calcular el coste con decimales precisos")
         void shouldCalculateCostWithPreciseDecimals() {
             Batch batch = Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6),
-                    Money.of(25.0), Quantity.of(10.0));
+                    Money.of(25.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM));
             List<Batch> batches = new ArrayList<>(List.of(batch));
 
-            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.7), batches);
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.7, UnitOfMeasure.KILOGRAM), batches);
 
             assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("9.25"));
         }
@@ -130,7 +130,7 @@ class CostingServiceTest {
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of();
 
-            assertThatThrownBy(() -> costingService.calculateIngredientCost(null, Quantity.of(5.0), batches))
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(null, Quantity.of(5.0, UnitOfMeasure.KILOGRAM), batches))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Product cannot be null");
         }
@@ -150,7 +150,7 @@ class CostingServiceTest {
         void shouldThrowExceptionWhenQuantityIsZeroOrNegative() {
             List<Batch> batches = List.of();
 
-            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(0.0), batches))
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(0.0, UnitOfMeasure.KILOGRAM), batches))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Quantity must be greater than zero");
         }
@@ -158,7 +158,7 @@ class CostingServiceTest {
         @Test
         @DisplayName("lanzar excepción si la lista de lotes es null")
         void shouldThrowExceptionWhenBatchesIsNull() {
-            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0), null))
+            assertThatThrownBy(() -> costingService.calculateIngredientCost(rice, Quantity.of(5.0, UnitOfMeasure.KILOGRAM), null))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Batches list cannot be null");
         }
@@ -178,14 +178,14 @@ class CostingServiceTest {
                     Difficulty.EASY,
                     4
             );
-            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1)));
-            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5)));
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1, UnitOfMeasure.KILOGRAM)));
+            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
             Map<Product, List<Batch>> availableBatches = new HashMap<>();
             availableBatches.put(rice, List.of(
-                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0))
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM))
             ));
             availableBatches.put(chicken, List.of(
-                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0))
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
             ));
 
             Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
@@ -203,15 +203,15 @@ class CostingServiceTest {
                     Difficulty.MEDIUM,
                     8
             );
-            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(3.0)));
-            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.5)));
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM)));
+            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
             Map<Product, List<Batch>> availableBatches = new HashMap<>();
             availableBatches.put(rice, List.of(
-                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(1), Money.of(10.0), Quantity.of(1.0)),
-                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(15.0), Quantity.of(5.0))
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(1), Money.of(10.0), Quantity.of(1.0, UnitOfMeasure.KILOGRAM)),
+                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(15.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
             ));
             availableBatches.put(tomato, List.of(
-                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(2.0), Quantity.of(2.0))
+                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(2.0), Quantity.of(2.0, UnitOfMeasure.KILOGRAM))
             ));
 
             Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
@@ -229,19 +229,19 @@ class CostingServiceTest {
                     Difficulty.MEDIUM,
                     4
             );
-            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(0.4)));
-            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.2)));
-            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.1)));
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(0.4, UnitOfMeasure.KILOGRAM)));
+            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.2, UnitOfMeasure.KILOGRAM)));
+            recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.1, UnitOfMeasure.KILOGRAM)));
 
             Map<Product, List<Batch>> availableBatches = new HashMap<>();
             availableBatches.put(rice, List.of(
-                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(5.0))
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
             ));
             availableBatches.put(chicken, List.of(
-                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(3), Money.of(40.0), Quantity.of(5.0))
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(3), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
             ));
             availableBatches.put(tomato, List.of(
-                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(3.0), Quantity.of(1.0))
+                    Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(3.0), Quantity.of(1.0, UnitOfMeasure.KILOGRAM))
             ));
 
             Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);

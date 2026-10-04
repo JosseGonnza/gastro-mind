@@ -23,16 +23,16 @@ class RecipeIngredientTest {
     @Test
     @DisplayName("Crear un ingrediente válido")
     void shouldOfValidIngredient() {
-        var ingredient = RecipeIngredient.of(rice, Quantity.of(400));
+        var ingredient = RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM));
 
         assertThat(ingredient.product()).isEqualTo(rice);
-        assertThat(ingredient.quantity().value()).isEqualTo(400);
+        assertThat(ingredient.quantity()).isEqualTo(Quantity.of(400, UnitOfMeasure.GRAM));
     }
 
     @Test
     @DisplayName("No permitir un producto nulo")
     void shouldThrowExceptionWhenProductIsNull() {
-        assertThatThrownBy(() -> RecipeIngredient.of(null, Quantity.of(400)))
+        assertThatThrownBy(() -> RecipeIngredient.of(null, Quantity.of(400, UnitOfMeasure.GRAM)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Product cannot be null");
     }

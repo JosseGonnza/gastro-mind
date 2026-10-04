@@ -45,13 +45,13 @@ public class Batch {
 
     public Money getUnitCost() {
         BigDecimal totalCost = purchasePrice.amount();
-        BigDecimal originalQuantity = BigDecimal.valueOf(initialQuantity.value());
+        BigDecimal originalQuantity = initialQuantity.amount();
         BigDecimal unitCost = totalCost.divide(originalQuantity, 2, RoundingMode.HALF_EVEN);
         return new Money(unitCost, purchasePrice.currency());
     }
 
     public void consume(Quantity amountToConsume) {
-        if (amountToConsume.value() <= 0) throw new IllegalArgumentException("Quantity cannot be zero or less");
+        if (amountToConsume.isZero()) throw new IllegalArgumentException("Quantity cannot be zero or less");
         this.currentQuantity = this.currentQuantity.subtract(amountToConsume);
     }
 

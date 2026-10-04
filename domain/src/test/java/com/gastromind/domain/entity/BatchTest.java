@@ -23,7 +23,7 @@ class BatchTest {
     private static final String SKU = "LOT-2026-001";
     private static final LocalDate EXPIRATION_DATE = LocalDate.now().plusMonths(6);
     private static final Money PURCHASE_PRICE = Money.of(50.00);
-    private static final Quantity INITIAL_QUANTITY = Quantity.of(25.0);
+    private static final Quantity INITIAL_QUANTITY = Quantity.of(25.0, UnitOfMeasure.KILOGRAM);
 
     @Test
     @DisplayName("Crear un lote válido con stock inicial igual que el actual")
@@ -32,7 +32,7 @@ class BatchTest {
 
         assertThat(batch.getId()).isNotNull();
         assertThat(batch.getSku()).isEqualTo(SKU);
-        assertThat(batch.getCurrentQuantity().value()).isEqualTo(25.0);
+        assertThat(batch.getCurrentQuantity()).isEqualTo(Quantity.of(25.0, UnitOfMeasure.KILOGRAM));
         assertThat(batch.getEntryDate()).isToday();
     }
 
@@ -54,9 +54,9 @@ class BatchTest {
     void shouldReduceStockWhenConsuming() {
         Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
 
-        batch.consume(Quantity.of(5.0));
+        batch.consume(Quantity.of(5.0, UnitOfMeasure.KILOGRAM));
 
-        assertThat(batch.getCurrentQuantity().value()).isEqualTo(20.0);
+        assertThat(batch.getCurrentQuantity()).isEqualTo(Quantity.of(20.0, UnitOfMeasure.KILOGRAM));
     }
 
     @Test
@@ -64,7 +64,7 @@ class BatchTest {
     void shouldThrowExceptionWhenOverConsuming() {
         Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
 
-        assertThatThrownBy(() -> batch.consume(Quantity.of(30.0)))
+        assertThatThrownBy(() -> batch.consume(Quantity.of(30.0, UnitOfMeasure.KILOGRAM)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Not enough quantity available");
     }

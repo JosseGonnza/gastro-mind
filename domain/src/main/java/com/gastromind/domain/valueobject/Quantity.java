@@ -1,36 +1,61 @@
 package com.gastromind.domain.valueobject;
 
-public record Quantity(double value) {
+import java.math.BigDecimal;
+
+public record Quantity(BigDecimal amount, UnitOfMeasure unit) {
 
     public Quantity {
-        if (value < 0) {
+        if (amount == null) {
+            throw new IllegalArgumentException("Amount cannot be null");
+        }
+        if (unit == null) {
+            throw new IllegalArgumentException("Unit cannot be null");
+        }
+        if (amount.signum() < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
+        //Sin ceros sobrantes, 2.50 kg y 2.5 kg son la misma cantidad
+        amount = amount.stripTrailingZeros();
     }
 
-    //Es redundante, pero mantiene la consistencia. Todos los VO se crean de la misma manera
-    public static Quantity of(double value) {
-        return new Quantity(value);
+    public static Quantity of(BigDecimal amount, UnitOfMeasure unit) {
+        return new Quantity(amount, unit);
+    }
+
+    public static Quantity of(double amount, UnitOfMeasure unit) {
+        return new Quantity(BigDecimal.valueOf(amount), unit);
+    }
+
+    public static Quantity zero(UnitOfMeasure unit) {
+        return new Quantity(BigDecimal.ZERO, unit);
+    }
+
+    public Quantity to(UnitOfMeasure target) {
+        return new Quantity(unit.convert(amount, target), target);
     }
 
     public Quantity add(Quantity other) {
-        return new Quantity(this.value + other.value);
+        return new Quantity(amount.add(other.to(unit).amount), unit);
     }
 
     public Quantity subtract(Quantity other) {
-        double result = this.value - other.value;
-        if (result < 0) {
+        BigDecimal result = amount.subtract(other.to(unit).amount);
+        if (result.signum() < 0) {
             throw new IllegalArgumentException("Not enough quantity available");
         }
-        return new Quantity(result);
+        return new Quantity(result, unit);
     }
 
     public boolean hasEnough(Quantity required) {
-        return this.value >= required.value;
+        return amount.compareTo(required.to(unit).amount) >= 0;
+    }
+
+    public boolean isZero() {
+        return amount.signum() == 0;
     }
 
     @Override
     public String toString() {
-        return String.valueOf(value);
+        return amount.toPlainString() + " " + unit.getSymbol();
     }
 }

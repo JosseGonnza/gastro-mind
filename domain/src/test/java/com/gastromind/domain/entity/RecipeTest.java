@@ -101,7 +101,7 @@ class RecipeTest {
         @DisplayName("Permitir añadir un ingrediente correctamente")
         void shouldAddIngredient() {
             var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
-            var ingredient = RecipeIngredient.of(rice, Quantity.of(400));
+            var ingredient = RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM));
 
             recipe.addIngredient(ingredient);
 
@@ -123,8 +123,8 @@ class RecipeTest {
         @DisplayName("No permitir productos duplicados")
         void shouldThrowExceptionWhenProductIsDuplicated() {
             var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
-            var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400));
-            var ingredient2 = RecipeIngredient.of(rice, Quantity.of(200));
+            var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM));
+            var ingredient2 = RecipeIngredient.of(rice, Quantity.of(200, UnitOfMeasure.GRAM));
 
             recipe.addIngredient(ingredient1);
 
@@ -137,8 +137,8 @@ class RecipeTest {
         @DisplayName("Permitir añadir ingredientes diferentes")
         void shouldAddSeveralDifferentIngredients() {
             var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
-            var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400));
-            var ingredient2 = RecipeIngredient.of(chicken, Quantity.of(200));
+            var ingredient1 = RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM));
+            var ingredient2 = RecipeIngredient.of(chicken, Quantity.of(200, UnitOfMeasure.GRAM));
 
             recipe.addIngredient(ingredient1);
             recipe.addIngredient(ingredient2);

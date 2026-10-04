@@ -39,8 +39,11 @@ de ese arroz es **24 €**, no un precio medio.
 - Si no hay stock suficiente, **no se toca ningún lote**: el consumo es todo o
   nada.
 - Un lote **caducado no se acepta** al darlo de entrada.
-- El dinero va en `BigDecimal` con redondeo bancario, y las cantidades nunca
-  son negativas.
+- Las cantidades **llevan su unidad** y se convierten solas dentro de la misma
+  magnitud: una receta que pide 200 g de un producto que se compra en kg gasta
+  0,2 kg. Mezclar magnitudes (kg con unidades o manojos) es un error.
+- El dinero y las cantidades van en `BigDecimal`: nada de decimales
+  aproximados.
 
 ## Qué hace
 
@@ -156,9 +159,9 @@ curl localhost:8080/products
 - [ ] **Recetas y escandallo** por API, con coste por ración.
 - [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
-- [ ] Pendientes técnicos: cantidades en `BigDecimal` y con unidad, lotes
-  reconstruibles desde la base de datos, coste unitario sin redondeo
-  intermedio y excepción de validación propia del dominio.
+- [ ] Pendientes técnicos: lotes reconstruibles desde la base de datos, coste
+  unitario sin redondeo intermedio y excepción de validación propia del
+  dominio.
 
 ## Notas
 

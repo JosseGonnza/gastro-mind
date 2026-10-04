@@ -1,5 +1,6 @@
 package com.gastromind.domain.entity;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.Quantity;
 import com.gastromind.domain.valueobject.UnitOfMeasure;
@@ -37,9 +38,9 @@ public class Batch {
 
     //Alta de género: aplica las reglas de entrada (no se recibe nada caducado)
     public static Batch create(Product product, String sku, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
-        if (product == null) throw new IllegalArgumentException("Product cannot be null");
+        if (product == null) throw new DomainValidationException("Product cannot be null");
         if (expirationDate != null && expirationDate.isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Cannot accept expired products");
+            throw new DomainValidationException("Cannot accept expired products");
         }
         return new Batch(
                 UUID.randomUUID(),
@@ -73,28 +74,28 @@ public class Batch {
     }
 
     public void consume(Quantity amountToConsume) {
-        if (amountToConsume.isZero()) throw new IllegalArgumentException("Quantity cannot be zero or less");
+        if (amountToConsume.isZero()) throw new DomainValidationException("Quantity cannot be zero or less");
         this.currentQuantity = this.currentQuantity.subtract(amountToConsume);
     }
 
     private static void validateInvariants(UUID id, UUID productId, UnitOfMeasure unit, String sku, LocalDate entryDate,
                                            LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity,
                                            Quantity currentQuantity) {
-        if (id == null) throw new IllegalArgumentException("Batch ID cannot be null");
-        if (productId == null) throw new IllegalArgumentException("Product cannot be null");
-        if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
-        if (sku == null || sku.isBlank()) throw new IllegalArgumentException("SKU cannot be empty");
-        if (purchasePrice == null) throw new IllegalArgumentException("Price cannot be null");
-        if (initialQuantity == null) throw new IllegalArgumentException("Initial quantity cannot be null");
-        if (currentQuantity == null) throw new IllegalArgumentException("Current quantity cannot be null");
+        if (id == null) throw new DomainValidationException("Batch ID cannot be null");
+        if (productId == null) throw new DomainValidationException("Product cannot be null");
+        if (unit == null) throw new DomainValidationException("Unit cannot be null");
+        if (sku == null || sku.isBlank()) throw new DomainValidationException("SKU cannot be empty");
+        if (purchasePrice == null) throw new DomainValidationException("Price cannot be null");
+        if (initialQuantity == null) throw new DomainValidationException("Initial quantity cannot be null");
+        if (currentQuantity == null) throw new DomainValidationException("Current quantity cannot be null");
         if (!initialQuantity.unit().isConvertibleTo(unit) || !currentQuantity.unit().isConvertibleTo(unit)) {
-            throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
+            throw new DomainValidationException("Quantity unit must be compatible with product unit");
         }
         if (!initialQuantity.hasEnough(currentQuantity)) {
-            throw new IllegalArgumentException("Current quantity cannot exceed initial quantity");
+            throw new DomainValidationException("Current quantity cannot exceed initial quantity");
         }
-        if (entryDate == null) throw new IllegalArgumentException("Entry date cannot be null");
-        if (expirationDate == null) throw new IllegalArgumentException("Expiration date cannot be null");
+        if (entryDate == null) throw new DomainValidationException("Entry date cannot be null");
+        if (expirationDate == null) throw new DomainValidationException("Expiration date cannot be null");
     }
 
     public UUID getId() {

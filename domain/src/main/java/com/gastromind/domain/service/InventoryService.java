@@ -2,6 +2,7 @@ package com.gastromind.domain.service;
 
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.Product;
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.exception.NotEnoughStockException;
 import com.gastromind.domain.valueobject.Quantity;
 
@@ -12,13 +13,13 @@ public class InventoryService {
 
     public Quantity calculateCurrentStock(Product product, List<Batch> batches) {
         if (product == null) {
-            throw new IllegalArgumentException("Product cannot be null");
+            throw new DomainValidationException("Product cannot be null");
         }
         if (batches == null || batches.isEmpty()) {
             return Quantity.zero(product.getUnit());
         }
         if (batches.stream().anyMatch(batch -> !batch.belongsTo(product))) {
-            throw new IllegalArgumentException("All batches must belong to the product");
+            throw new DomainValidationException("All batches must belong to the product");
         }
         return batches.stream()
                 .map(Batch::getCurrentQuantity)
@@ -59,22 +60,22 @@ public class InventoryService {
 
     private static void validateConsumeInputs(Product product, Quantity amountToConsume, List<Batch> batches) {
         if (product == null) {
-            throw new IllegalArgumentException("Product cannot be null");
+            throw new DomainValidationException("Product cannot be null");
         }
         if (amountToConsume == null) {
-            throw new IllegalArgumentException("Amount to consume cannot be null");
+            throw new DomainValidationException("Amount to consume cannot be null");
         }
         if (amountToConsume.isZero()) {
-            throw new IllegalArgumentException("Amount to consume must be greater than zero");
+            throw new DomainValidationException("Amount to consume must be greater than zero");
         }
         if (!amountToConsume.unit().isConvertibleTo(product.getUnit())) {
-            throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
+            throw new DomainValidationException("Quantity unit must be compatible with product unit");
         }
         if (batches == null) {
-            throw new IllegalArgumentException("Batches list cannot be null");
+            throw new DomainValidationException("Batches list cannot be null");
         }
         if (batches.stream().anyMatch(batch -> !batch.belongsTo(product))) {
-            throw new IllegalArgumentException("All batches must belong to the product");
+            throw new DomainValidationException("All batches must belong to the product");
         }
     }
 }

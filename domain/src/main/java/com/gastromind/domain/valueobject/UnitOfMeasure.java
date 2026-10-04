@@ -1,5 +1,7 @@
 package com.gastromind.domain.valueobject;
 
+import com.gastromind.domain.exception.DomainValidationException;
+
 import java.math.BigDecimal;
 
 public enum UnitOfMeasure {
@@ -39,7 +41,7 @@ public enum UnitOfMeasure {
 
     public BigDecimal convert(BigDecimal amount, UnitOfMeasure target) {
         if (!isConvertibleTo(target)) {
-            throw new IllegalArgumentException("Cannot convert " + this + " to " + target);
+            throw new DomainValidationException("Cannot convert " + this + " to " + target);
         }
         return amount.multiply(factorToBase).divide(target.factorToBase);
     }

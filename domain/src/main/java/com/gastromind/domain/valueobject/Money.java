@@ -1,5 +1,7 @@
 package com.gastromind.domain.valueobject;
 
+import com.gastromind.domain.exception.DomainValidationException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Currency;
@@ -11,7 +13,7 @@ public record Money(BigDecimal amount, Currency currency) {
         Objects.requireNonNull(amount, "Amount cannot be null");
         Objects.requireNonNull(currency, "Currency cannot be null");
         if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Amount cannot be negative");
+            throw new DomainValidationException("Amount cannot be negative");
         }
         //Redondeo del banquero -> Al par más cercano
         //TODO: Interesante usar "currency.getDefaultFractionDigits()" para que la moneda decida los decimales
@@ -28,7 +30,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
     public Money add(Money other) {
         if (!this.currency.equals(other.currency)) {
-            throw new IllegalArgumentException("Cannot add different currencies");
+            throw new DomainValidationException("Cannot add different currencies");
         }
         return new Money(this.amount.add(other.amount), this.currency);
     }
@@ -36,7 +38,7 @@ public record Money(BigDecimal amount, Currency currency) {
     public Money multiply(int multiplier) {
         //TODO: Permitimos el 0 de momento, por si no tenemos stock de un producto que no rompa
         if (multiplier < 0) {
-            throw new IllegalArgumentException("Multiplier cannot be negative");
+            throw new DomainValidationException("Multiplier cannot be negative");
         }
         return new Money(this.amount.multiply(BigDecimal.valueOf(multiplier)), this.currency);
     }

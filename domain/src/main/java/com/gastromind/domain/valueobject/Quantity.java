@@ -1,18 +1,20 @@
 package com.gastromind.domain.valueobject;
 
+import com.gastromind.domain.exception.DomainValidationException;
+
 import java.math.BigDecimal;
 
 public record Quantity(BigDecimal amount, UnitOfMeasure unit) {
 
     public Quantity {
         if (amount == null) {
-            throw new IllegalArgumentException("Amount cannot be null");
+            throw new DomainValidationException("Amount cannot be null");
         }
         if (unit == null) {
-            throw new IllegalArgumentException("Unit cannot be null");
+            throw new DomainValidationException("Unit cannot be null");
         }
         if (amount.signum() < 0) {
-            throw new IllegalArgumentException("Quantity cannot be negative");
+            throw new DomainValidationException("Quantity cannot be negative");
         }
         //Sin ceros sobrantes, 2.50 kg y 2.5 kg son la misma cantidad; y 50 no se queda en 5E+1
         amount = amount.stripTrailingZeros();
@@ -44,7 +46,7 @@ public record Quantity(BigDecimal amount, UnitOfMeasure unit) {
     public Quantity subtract(Quantity other) {
         BigDecimal result = amount.subtract(other.to(unit).amount);
         if (result.signum() < 0) {
-            throw new IllegalArgumentException("Not enough quantity available");
+            throw new DomainValidationException("Not enough quantity available");
         }
         return new Quantity(result, unit);
     }

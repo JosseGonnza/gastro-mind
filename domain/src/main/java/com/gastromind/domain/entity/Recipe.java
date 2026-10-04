@@ -1,5 +1,6 @@
 package com.gastromind.domain.entity;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.Difficulty;
 import com.gastromind.domain.valueobject.RecipeIngredient;
 import com.gastromind.domain.valueobject.RecipeStep;
@@ -46,17 +47,17 @@ public class Recipe {
 
     public void addIngredient(RecipeIngredient ingredient) {
         if (ingredient == null) {
-            throw new IllegalArgumentException("Ingredient cannot be null");
+            throw new DomainValidationException("Ingredient cannot be null");
         }
         if (isAnyMatch(ingredient)) {
-            throw new IllegalArgumentException("Product already exists in recipe");
+            throw new DomainValidationException("Product already exists in recipe");
         }
         ingredients.add(ingredient);
     }
 
     public void addStep(RecipeStep step) {
         if (step == null) {
-            throw new IllegalArgumentException("Step cannot be null");
+            throw new DomainValidationException("Step cannot be null");
         }
         steps.add(step);
     }
@@ -67,16 +68,16 @@ public class Recipe {
 
     private static void validateInvariants(String name, Duration cookingTime, Difficulty difficulty, int portions) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Name cannot be empty");
+            throw new DomainValidationException("Name cannot be empty");
         }
         if (cookingTime == null) {
-            throw new IllegalArgumentException("Cooking time cannot be null");
+            throw new DomainValidationException("Cooking time cannot be null");
         }
         if (difficulty == null) {
-            throw new IllegalArgumentException("Difficulty cannot be null");
+            throw new DomainValidationException("Difficulty cannot be null");
         }
         if (portions <= 0) {
-            throw new IllegalArgumentException("Portions must be greater than zero");
+            throw new DomainValidationException("Portions must be greater than zero");
         }
     }
 

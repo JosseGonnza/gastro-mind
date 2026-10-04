@@ -1,13 +1,15 @@
 package com.gastromind.domain.valueobject;
 
+import com.gastromind.domain.exception.DomainValidationException;
+
 public record RecipeStep(int stepNumber, String description) {
 
     public RecipeStep {
         if (stepNumber <= 0) {
-            throw new IllegalArgumentException("Step number must be positive");
+            throw new DomainValidationException("Step number must be positive");
         }
         if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("Description cannot be empty");
+            throw new DomainValidationException("Description cannot be empty");
         }
     }
 

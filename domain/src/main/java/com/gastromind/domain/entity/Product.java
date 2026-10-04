@@ -1,5 +1,6 @@
 package com.gastromind.domain.entity;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.Allergen;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.UnitOfMeasure;
@@ -20,10 +21,10 @@ public class Product {
     public Product(UUID id, String name, String description, Category category,
                    UnitOfMeasure unit, Set<Allergen> allergens) {
         //Mejor IAE que NPE por semántica en el dominio
-        if (id == null) throw new IllegalArgumentException("Product id cannot be null");
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Product name cannot be empty");
-        if (category == null) throw new IllegalArgumentException("Category cannot be null");
-        if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
+        if (id == null) throw new DomainValidationException("Product id cannot be null");
+        if (name == null || name.isBlank()) throw new DomainValidationException("Product name cannot be empty");
+        if (category == null) throw new DomainValidationException("Category cannot be null");
+        if (unit == null) throw new DomainValidationException("Unit cannot be null");
         this.id = id;
         this.name = name;
         this.description = description;

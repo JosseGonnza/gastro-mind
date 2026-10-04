@@ -124,4 +124,11 @@ class QuantityTest {
         assertThat(Quantity.of(0.2, KILOGRAM)).hasToString("0.2 kg");
         assertThat(Quantity.of(50, GRAM)).hasToString("50 g");
     }
+
+    @Test
+    @DisplayName("No guardar el importe en notación científica")
+    void shouldNotUseScientificNotation() {
+        assertThat(Quantity.of(50, GRAM).amount().toString()).isEqualTo("50");
+        assertThat(Quantity.of(new BigDecimal("1500.00"), MILLILITER).amount().toString()).isEqualTo("1500");
+    }
 }

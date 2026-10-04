@@ -216,15 +216,12 @@ class CostingServiceTest {
             );
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
-            Map<Product, List<Batch>> availableBatches = new HashMap<>();
-            availableBatches.put(rice, List.of(
-                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM))
-            ));
-            availableBatches.put(chicken, List.of(
+            List<Batch> batches = List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM)),
                     Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(1), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
-            ));
+            );
 
-            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+            Money totalCost = costingService.calculateRecipeCost(recipe, List.of(rice, chicken), batches);
 
             assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("6.00"));
         }
@@ -241,16 +238,13 @@ class CostingServiceTest {
             );
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
-            Map<Product, List<Batch>> availableBatches = new HashMap<>();
-            availableBatches.put(rice, List.of(
+            List<Batch> batches = List.of(
                     Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(1), Money.of(10.0), Quantity.of(1.0, UnitOfMeasure.KILOGRAM)),
-                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(15.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
-            ));
-            availableBatches.put(tomato, List.of(
+                    Batch.create(rice, "LOT-2026-002", LocalDate.now().plusMonths(6), Money.of(15.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM)),
                     Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(2.0), Quantity.of(2.0, UnitOfMeasure.KILOGRAM))
-            ));
+            );
 
-            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+            Money totalCost = costingService.calculateRecipeCost(recipe, List.of(rice, tomato), batches);
 
             assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("16.50"));
         }
@@ -268,21 +262,30 @@ class CostingServiceTest {
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(0.4, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.2, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.1, UnitOfMeasure.KILOGRAM)));
-
-            Map<Product, List<Batch>> availableBatches = new HashMap<>();
-            availableBatches.put(rice, List.of(
-                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
-            ));
-            availableBatches.put(chicken, List.of(
-                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(3), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM))
-            ));
-            availableBatches.put(tomato, List.of(
+            List<Batch> batches = List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM)),
+                    Batch.create(chicken, "LOT-2026-002", LocalDate.now().plusMonths(3), Money.of(40.0), Quantity.of(5.0, UnitOfMeasure.KILOGRAM)),
                     Batch.create(tomato, "LOT-2026-003", LocalDate.now().plusMonths(2), Money.of(3.0), Quantity.of(1.0, UnitOfMeasure.KILOGRAM))
-            ));
+            );
 
-            Money totalCost = costingService.calculateRecipeCost(recipe, availableBatches);
+            Money totalCost = costingService.calculateRecipeCost(recipe, List.of(rice, chicken, tomato), batches);
 
             assertThat(totalCost.amount()).isEqualByComparingTo(new BigDecimal("2.70"));
+        }
+
+        @Test
+        @DisplayName("lanzar excepción si falta el producto de algún ingrediente")
+        void shouldThrowExceptionWhenAProductIsMissing() {
+            Recipe recipe = Recipe.create("Arroz con pollo", "Receta sencilla", Duration.ofMinutes(30), Difficulty.EASY, 4);
+            recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1, UnitOfMeasure.KILOGRAM)));
+            recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
+            List<Batch> batches = List.of(
+                    Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(20.0), Quantity.of(10.0, UnitOfMeasure.KILOGRAM))
+            );
+
+            assertThatThrownBy(() -> costingService.calculateRecipeCost(recipe, List.of(rice), batches))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Missing product for ingredient " + chicken.getId());
         }
     }
 }

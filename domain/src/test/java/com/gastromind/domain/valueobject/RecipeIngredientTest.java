@@ -21,11 +21,11 @@ class RecipeIngredientTest {
     );
 
     @Test
-    @DisplayName("Crear un ingrediente válido")
+    @DisplayName("Crear un ingrediente válido que guarda solo el id del producto")
     void shouldOfValidIngredient() {
         var ingredient = RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM));
 
-        assertThat(ingredient.product()).isEqualTo(rice);
+        assertThat(ingredient.productId()).isEqualTo(rice.getId());
         assertThat(ingredient.quantity()).isEqualTo(Quantity.of(400, UnitOfMeasure.GRAM));
     }
 

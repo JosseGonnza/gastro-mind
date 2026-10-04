@@ -9,6 +9,7 @@ import com.gastromind.domain.valueobject.Quantity;
 import com.gastromind.domain.valueobject.RecipeIngredient;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Currency;
@@ -71,8 +72,10 @@ public class CostingService {
             Quantity amountToTake = batchCurrentQuantity.hasEnough(remainingNeeded)
                     ? remainingNeeded.to(batchCurrentQuantity.unit())
                     : batchCurrentQuantity;
-            BigDecimal batchUnitCost = batch.getUnitCost().amount();
-            BigDecimal chunkCost = batchUnitCost.multiply(amountToTake.amount());
+            //Sin pasar por el precio por kg redondeado: 10 € / 3 kg × 3 kg tiene que dar 10 €, no 9,99 €
+            BigDecimal chunkCost = batch.getPurchasePrice().amount()
+                    .multiply(amountToTake.amount())
+                    .divide(batch.getInitialQuantity().amount(), MathContext.DECIMAL64);
 
             totalAccumulatedCost = totalAccumulatedCost.add(chunkCost);
             remainingNeeded = remainingNeeded.subtract(amountToTake);

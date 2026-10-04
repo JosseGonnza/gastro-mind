@@ -110,7 +110,7 @@ a la API en las próximas funcionalidades.
   sésamo, que no existen en ningún set libre.
 - **TDD de principio a fin**: cada regla nace de un test en rojo, y el
   historial de commits lo cuenta.
-- **102 tests en el backend** (JUnit 5 + AssertJ): unitarios en el dominio y
+- **122 tests en el backend** (JUnit 6 + AssertJ): unitarios en el dominio y
   los casos de uso, y de integración contra un **PostgreSQL real** gracias a
   **Testcontainers**. Los nombres en español se leen como reglas del negocio:
   *«CostingService debería calcular el coste con múltiples lotes»*. En el
@@ -156,7 +156,8 @@ curl localhost:8080/products
 
 - [x] **Catálogo de productos**: dominio, casos de uso, API y PostgreSQL.
 - [ ] **Recepción de género**: albaranes de entrada que generan lotes.
-- [ ] **Recetas y escandallo** por API, con coste por ración.
+- [ ] **Recetas y escandallo** por API, con coste por ración y los
+  ingredientes apuntando al producto por su id.
 - [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
 - [ ] Pendientes técnicos: coste unitario sin redondeo intermedio y excepción

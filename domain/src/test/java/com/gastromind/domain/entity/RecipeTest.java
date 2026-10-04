@@ -88,6 +88,18 @@ class RecipeTest {
         }
     }
 
+    @Test
+    @DisplayName("No dejar modificar ingredientes ni pasos desde fuera, saltándose sus validaciones")
+    void shouldNotExposeMutableIngredientsOrSteps() {
+        var recipe = Recipe.create(VALID_NAME, VALID_DESCRIPTION, VALID_TIME, VALID_DIFFICULTY, VALID_PORTIONS);
+        var rice = Product.create("Arroz Bomba", "Especial para paellas", Category.GRAIN, UnitOfMeasure.GRAM, Set.of());
+
+        assertThatThrownBy(() -> recipe.getIngredients().add(RecipeIngredient.of(rice, Quantity.of(400, UnitOfMeasure.GRAM))))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> recipe.getSteps().add(RecipeStep.of(1, "Calentar el aceite")))
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
+
     @Nested
     @DisplayName("Gestión de Ingredientes")
     class IngredientManagement {

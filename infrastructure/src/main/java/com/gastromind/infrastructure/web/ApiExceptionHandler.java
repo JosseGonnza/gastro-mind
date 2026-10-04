@@ -1,6 +1,7 @@
 package com.gastromind.infrastructure.web;
 
 import com.gastromind.application.product.ProductNotFoundException;
+import com.gastromind.domain.exception.DomainValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,8 +15,8 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    ProblemDetail handleInvalidInput(IllegalArgumentException exception) {
+    @ExceptionHandler(DomainValidationException.class)
+    ProblemDetail handleInvalidInput(DomainValidationException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 }

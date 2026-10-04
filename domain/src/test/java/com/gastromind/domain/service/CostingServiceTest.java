@@ -162,6 +162,18 @@ class CostingServiceTest {
         }
 
         @Test
+        @DisplayName("calcular el coste sin redondear el precio por unidad por el camino")
+        void shouldCalculateCostWithoutIntermediateRounding() {
+            //10 € por 3 kg son 3,333... €/kg: gastar los 3 kg tiene que costar 10 €, no 9,99 €
+            Batch batch = Batch.create(rice, "LOT-2026-001", LocalDate.now().plusMonths(6), Money.of(10.0), Quantity.of(3.0, UnitOfMeasure.KILOGRAM));
+            List<Batch> batches = new ArrayList<>(List.of(batch));
+
+            Money cost = costingService.calculateIngredientCost(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM), batches);
+
+            assertThat(cost.amount()).isEqualByComparingTo(new BigDecimal("10.00"));
+        }
+
+        @Test
         @DisplayName("lanzar excepción si el producto es null")
         void shouldThrowExceptionWhenProductIsNull() {
             List<Batch> batches = List.of();

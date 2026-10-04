@@ -9,10 +9,14 @@ import com.gastromind.domain.valueobject.Quantity;
 import com.gastromind.domain.valueobject.RecipeIngredient;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class CostingService {
     public Money calculateIngredientCost(Product product, Quantity quantity, List<Batch> batches) {
@@ -28,15 +32,20 @@ public class CostingService {
         return calculateWeightedCost(quantity, sortedBatches);
     }
 
-    public Money calculateRecipeCost(Recipe recipe, Map<Product, List<Batch>> availableBatches) {
+    public Money calculateRecipeCost(Recipe recipe, Collection<Product> products, List<Batch> batches) {
+        Map<UUID, Product> productsById = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity(), (first, duplicate) -> first));
         Money totalCost = Money.of(0.0);
         for (RecipeIngredient ingredient : recipe.getIngredients()) {
-            Product product = ingredient.product();
-            Quantity requiredQuantity = ingredient.quantity();
+            Product product = productsById.get(ingredient.productId());
+            if (product == null) {
+                throw new IllegalArgumentException("Missing product for ingredient " + ingredient.productId());
+            }
+            List<Batch> productBatches = batches.stream()
+                    .filter(batch -> batch.belongsTo(product))
+                    .toList();
 
-            List<Batch> batches = availableBatches.get(product);
-
-            Money ingredientCost = calculateIngredientCost(product, requiredQuantity, batches);
+            Money ingredientCost = calculateIngredientCost(product, ingredient.quantity(), productBatches);
             totalCost = totalCost.add(ingredientCost);
         }
         return totalCost;

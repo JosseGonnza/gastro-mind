@@ -62,7 +62,7 @@ public class Recipe {
     }
 
     private boolean isAnyMatch(RecipeIngredient ingredient) {
-        return ingredients.stream().anyMatch(i -> i.product().equals(ingredient.product()));
+        return ingredients.stream().anyMatch(i -> i.productId().equals(ingredient.productId()));
     }
 
     private static void validateInvariants(String name, Duration cookingTime, Difficulty difficulty, int portions) {

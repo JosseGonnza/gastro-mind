@@ -70,6 +70,25 @@ class BatchTest {
     }
 
     @Test
+    @DisplayName("Guardar la cantidad en la unidad del producto")
+    void shouldStoreQuantityInProductUnit() {
+        //5000 g de harina, que se gestiona en kg: 50€ / 5kg = 10€/Kg
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, Quantity.of(5000, UnitOfMeasure.GRAM));
+
+        assertThat(batch.getInitialQuantity()).isEqualTo(Quantity.of(5, UnitOfMeasure.KILOGRAM));
+        assertThat(batch.getCurrentQuantity()).isEqualTo(Quantity.of(5, UnitOfMeasure.KILOGRAM));
+        assertThat(batch.getUnitCost().amount()).isEqualByComparingTo(new BigDecimal("10.00"));
+    }
+
+    @Test
+    @DisplayName("No aceptar una cantidad en una unidad que no casa con la del producto")
+    void shouldThrowExceptionWhenQuantityUnitIsIncompatible() {
+        assertThatThrownBy(() -> Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, Quantity.of(3, UnitOfMeasure.UNIT)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Quantity unit must be compatible with product unit");
+    }
+
+    @Test
     @DisplayName("No permitir crear lotes ya caducados")
     void shouldThrowExceptionWhenIfExpired() {
         LocalDate yesterday = LocalDate.now().minusDays(1);

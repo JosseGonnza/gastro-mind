@@ -38,6 +38,15 @@ class BatchTest {
     }
 
     @Test
+    @DisplayName("Guardar del producto solo su id y su unidad")
+    void shouldKeepProductIdAndUnit() {
+        Batch batch = Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, INITIAL_QUANTITY);
+
+        assertThat(batch.getProductId()).isEqualTo(PRODUCT.getId());
+        assertThat(batch.getUnit()).isEqualTo(UnitOfMeasure.KILOGRAM);
+    }
+
+    @Test
     @DisplayName("Calcular el coste unitario Precio/Cantidad")
     void shouldCalculateUnitCost() {
         //50€ / 25kg = 2€/Kg
@@ -106,7 +115,7 @@ class BatchTest {
         LocalDate entryDate = LocalDate.now().minusDays(30);
         LocalDate yesterday = LocalDate.now().minusDays(1);
 
-        Batch batch = Batch.restore(id, PRODUCT, SKU, entryDate, yesterday, PURCHASE_PRICE,
+        Batch batch = Batch.restore(id, PRODUCT.getId(), PRODUCT.getUnit(), SKU, entryDate, yesterday, PURCHASE_PRICE,
                 INITIAL_QUANTITY, Quantity.of(10, UnitOfMeasure.KILOGRAM));
 
         assertThat(batch.getId()).isEqualTo(id);
@@ -119,7 +128,7 @@ class BatchTest {
     @Test
     @DisplayName("Reconstruir la cantidad actual en la unidad del producto")
     void shouldRestoreCurrentQuantityInProductUnit() {
-        Batch batch = Batch.restore(UUID.randomUUID(), PRODUCT, SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
+        Batch batch = Batch.restore(UUID.randomUUID(), PRODUCT.getId(), PRODUCT.getUnit(), SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
                 INITIAL_QUANTITY, Quantity.of(10000, UnitOfMeasure.GRAM));
 
         assertThat(batch.getCurrentQuantity()).isEqualTo(Quantity.of(10, UnitOfMeasure.KILOGRAM));
@@ -128,22 +137,26 @@ class BatchTest {
     @Test
     @DisplayName("No reconstruir un lote con más cantidad actual que inicial")
     void shouldNotRestoreBatchWithMoreCurrentThanInitialQuantity() {
-        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT, SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
+        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT.getId(), PRODUCT.getUnit(), SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
                 INITIAL_QUANTITY, Quantity.of(30, UnitOfMeasure.KILOGRAM)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Current quantity cannot exceed initial quantity");
     }
 
     @Test
-    @DisplayName("No reconstruir un lote sin cantidad actual ni fecha de entrada")
+    @DisplayName("No reconstruir un lote sin cantidad actual, fecha de entrada o producto")
     void shouldNotRestoreBatchWithMissingData() {
-        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT, SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
+        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT.getId(), PRODUCT.getUnit(), SKU, LocalDate.now(), EXPIRATION_DATE, PURCHASE_PRICE,
                 INITIAL_QUANTITY, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Current quantity cannot be null");
-        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT, SKU, null, EXPIRATION_DATE, PURCHASE_PRICE,
+        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), PRODUCT.getId(), PRODUCT.getUnit(), SKU, null, EXPIRATION_DATE, PURCHASE_PRICE,
                 INITIAL_QUANTITY, INITIAL_QUANTITY))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Entry date cannot be null");
+        assertThatThrownBy(() -> Batch.restore(UUID.randomUUID(), null, UnitOfMeasure.KILOGRAM, SKU, LocalDate.now(), EXPIRATION_DATE,
+                PURCHASE_PRICE, INITIAL_QUANTITY, INITIAL_QUANTITY))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Product cannot be null");
     }
 }

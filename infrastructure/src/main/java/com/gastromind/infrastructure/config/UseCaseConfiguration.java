@@ -4,6 +4,10 @@ import com.gastromind.application.product.CreateProduct;
 import com.gastromind.application.product.GetProduct;
 import com.gastromind.application.product.ListProducts;
 import com.gastromind.application.product.ProductRepository;
+import com.gastromind.application.supplier.CreateSupplier;
+import com.gastromind.application.supplier.GetSupplier;
+import com.gastromind.application.supplier.ListSuppliers;
+import com.gastromind.application.supplier.SupplierRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,5 +27,20 @@ public class UseCaseConfiguration {
     @Bean
     ListProducts listProducts(ProductRepository productRepository) {
         return new ListProducts(productRepository);
+    }
+
+    @Bean
+    CreateSupplier createSupplier(SupplierRepository supplierRepository) {
+        return new CreateSupplier(supplierRepository);
+    }
+
+    @Bean
+    GetSupplier getSupplier(SupplierRepository supplierRepository) {
+        return new GetSupplier(supplierRepository);
+    }
+
+    @Bean
+    ListSuppliers listSuppliers(SupplierRepository supplierRepository) {
+        return new ListSuppliers(supplierRepository);
     }
 }

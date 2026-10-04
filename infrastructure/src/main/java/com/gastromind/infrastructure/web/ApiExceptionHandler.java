@@ -1,6 +1,7 @@
 package com.gastromind.infrastructure.web;
 
 import com.gastromind.application.product.ProductNotFoundException;
+import com.gastromind.application.supplier.SupplierNotFoundException;
 import com.gastromind.domain.exception.DomainValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -12,6 +13,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ProductNotFoundException.class)
     ProblemDetail handleProductNotFound(ProductNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(SupplierNotFoundException.class)
+    ProblemDetail handleSupplierNotFound(SupplierNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 

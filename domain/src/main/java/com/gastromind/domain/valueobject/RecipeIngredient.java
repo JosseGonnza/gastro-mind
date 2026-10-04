@@ -11,6 +11,9 @@ public record RecipeIngredient(Product product, Quantity quantity) {
         if (quantity == null) {
             throw new IllegalArgumentException("Quantity cannot be null");
         }
+        if (!quantity.unit().isConvertibleTo(product.getUnit())) {
+            throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
+        }
     }
 
     public static RecipeIngredient of(Product product, Quantity quantity) {

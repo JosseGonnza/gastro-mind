@@ -64,6 +64,9 @@ public class InventoryService {
         if (amountToConsume.isZero()) {
             throw new IllegalArgumentException("Amount to consume must be greater than zero");
         }
+        if (!amountToConsume.unit().isConvertibleTo(product.getUnit())) {
+            throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
+        }
         if (batches == null) {
             throw new IllegalArgumentException("Batches list cannot be null");
         }

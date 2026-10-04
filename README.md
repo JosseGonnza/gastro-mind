@@ -93,7 +93,7 @@ a la API en las próximas funcionalidades.
   - `domain` — entidades, value objects y servicios de dominio, sin frameworks.
   - `application` — casos de uso (`CreateProduct`, `GetProduct`,
     `ListProducts`) y el puerto `ProductRepository`. Java puro, sin Spring.
-  - `infrastructure` — Spring Boot 3: la API REST y el adaptador de
+  - `infrastructure` — Spring Boot 4: la API REST y el adaptador de
     persistencia.
 - **SQL escrito a mano con JDBC puro**: `Connection`, `PreparedStatement` y
   `ResultSet`, con transacciones explícitas y sin ORM.
@@ -158,7 +158,7 @@ curl localhost:8080/products
 - [ ] Mermas e inventario.
 - [ ] Pendientes técnicos: cantidades en `BigDecimal` y con unidad, lotes
   reconstruibles desde la base de datos, coste unitario sin redondeo
-  intermedio, excepción de validación propia del dominio y Spring Boot al día.
+  intermedio y excepción de validación propia del dominio.
 
 ## Notas
 

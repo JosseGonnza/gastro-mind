@@ -43,7 +43,9 @@ de ese arroz es **24 €**, no un precio medio.
   magnitud: una receta que pide 200 g de un producto que se compra en kg gasta
   0,2 kg. Mezclar magnitudes (kg con unidades o manojos) es un error.
 - El dinero y las cantidades van en `BigDecimal`: nada de decimales
-  aproximados.
+  aproximados. El coste se calcula con el precio de cada lote **sin redondear
+  por el camino** (10 € por 3 kg, gastados enteros, son 10 €, no 9,99 €); solo
+  se redondea el total.
 
 ## Qué hace
 
@@ -110,7 +112,7 @@ a la API en las próximas funcionalidades.
   sésamo, que no existen en ningún set libre.
 - **TDD de principio a fin**: cada regla nace de un test en rojo, y el
   historial de commits lo cuenta.
-- **122 tests en el backend** (JUnit 6 + AssertJ): unitarios en el dominio y
+- **132 tests en el backend** (JUnit 6 + AssertJ): unitarios en el dominio y
   los casos de uso, y de integración contra un **PostgreSQL real** gracias a
   **Testcontainers**. Los nombres en español se leen como reglas del negocio:
   *«CostingService debería calcular el coste con múltiples lotes»*. En el
@@ -156,12 +158,9 @@ curl localhost:8080/products
 
 - [x] **Catálogo de productos**: dominio, casos de uso, API y PostgreSQL.
 - [ ] **Recepción de género**: albaranes de entrada que generan lotes.
-- [ ] **Recetas y escandallo** por API, con coste por ración y los
-  ingredientes apuntando al producto por su id.
+- [ ] **Recetas y escandallo** por API, con coste por ración.
 - [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
-- [ ] Pendientes técnicos: coste unitario sin redondeo intermedio y excepción
-  de validación propia del dominio.
 
 ## Notas
 

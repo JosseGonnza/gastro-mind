@@ -19,8 +19,9 @@ public class Batch {
     private final Quantity initialQuantity;
     private  Quantity currentQuantity;
 
-    private Batch(UUID id, Product product, String sku, LocalDate entryDate, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
-        validateInvariants(id, product, sku, expirationDate, purchasePrice, initialQuantity);
+    private Batch(UUID id, Product product, String sku, LocalDate entryDate, LocalDate expirationDate, Money purchasePrice,
+                  Quantity initialQuantity, Quantity currentQuantity) {
+        validateInvariants(id, product, sku, entryDate, expirationDate, purchasePrice, initialQuantity, currentQuantity);
         this.id = id;
         this.product = product;
         this.sku = sku;
@@ -28,10 +29,14 @@ public class Batch {
         this.expirationDate = expirationDate;
         this.purchasePrice = purchasePrice;
         this.initialQuantity = initialQuantity.to(product.getUnit());
-        this.currentQuantity = this.initialQuantity;
+        this.currentQuantity = currentQuantity.to(product.getUnit());
     }
 
+    //Alta de género: aplica las reglas de entrada (no se recibe nada caducado)
     public static Batch create(Product product, String sku, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
+        if (expirationDate != null && expirationDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot accept expired products");
+        }
         return new Batch(
                 UUID.randomUUID(),
                 product,
@@ -39,8 +44,15 @@ public class Batch {
                 LocalDate.now(),
                 expirationDate,
                 purchasePrice,
+                initialQuantity,
                 initialQuantity
         );
+    }
+
+    //Reconstruye un lote ya guardado tal como estaba: puede haber caducado o estar gastado a medias
+    public static Batch restore(UUID id, Product product, String sku, LocalDate entryDate, LocalDate expirationDate,
+                                Money purchasePrice, Quantity initialQuantity, Quantity currentQuantity) {
+        return new Batch(id, product, sku, entryDate, expirationDate, purchasePrice, initialQuantity, currentQuantity);
     }
 
     public Money getUnitCost() {
@@ -55,19 +67,23 @@ public class Batch {
         this.currentQuantity = this.currentQuantity.subtract(amountToConsume);
     }
 
-    private static void validateInvariants(UUID id, Product product, String sku, LocalDate expirationDate, Money purchasePrice, Quantity initialQuantity) {
+    private static void validateInvariants(UUID id, Product product, String sku, LocalDate entryDate, LocalDate expirationDate,
+                                           Money purchasePrice, Quantity initialQuantity, Quantity currentQuantity) {
         if (id == null) throw new IllegalArgumentException("Batch ID cannot be null");
         if (product == null) throw new IllegalArgumentException("Product cannot be null");
         if (sku == null || sku.isBlank()) throw new IllegalArgumentException("SKU cannot be empty");
         if (purchasePrice == null) throw new IllegalArgumentException("Price cannot be null");
         if (initialQuantity == null) throw new IllegalArgumentException("Initial quantity cannot be null");
-        if (!initialQuantity.unit().isConvertibleTo(product.getUnit())) {
+        if (currentQuantity == null) throw new IllegalArgumentException("Current quantity cannot be null");
+        if (!initialQuantity.unit().isConvertibleTo(product.getUnit())
+                || !currentQuantity.unit().isConvertibleTo(product.getUnit())) {
             throw new IllegalArgumentException("Quantity unit must be compatible with product unit");
         }
-        if (expirationDate == null) throw new IllegalArgumentException("Expiration date cannot be null");
-        if (expirationDate.isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Cannot accept expired products");
+        if (!initialQuantity.hasEnough(currentQuantity)) {
+            throw new IllegalArgumentException("Current quantity cannot exceed initial quantity");
         }
+        if (entryDate == null) throw new IllegalArgumentException("Entry date cannot be null");
+        if (expirationDate == null) throw new IllegalArgumentException("Expiration date cannot be null");
     }
 
     public UUID getId() {

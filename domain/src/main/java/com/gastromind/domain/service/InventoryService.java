@@ -17,6 +17,9 @@ public class InventoryService {
         if (batches == null || batches.isEmpty()) {
             return Quantity.zero(product.getUnit());
         }
+        if (batches.stream().anyMatch(batch -> !batch.belongsTo(product))) {
+            throw new IllegalArgumentException("All batches must belong to the product");
+        }
         return batches.stream()
                 .map(Batch::getCurrentQuantity)
                 .reduce(Quantity.zero(product.getUnit()), Quantity::add);
@@ -69,6 +72,9 @@ public class InventoryService {
         }
         if (batches == null) {
             throw new IllegalArgumentException("Batches list cannot be null");
+        }
+        if (batches.stream().anyMatch(batch -> !batch.belongsTo(product))) {
+            throw new IllegalArgumentException("All batches must belong to the product");
         }
     }
 }

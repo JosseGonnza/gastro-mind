@@ -93,5 +93,8 @@ public class CostingService {
         if (batches == null) {
             throw new IllegalArgumentException("Batches list cannot be null");
         }
+        if (batches.stream().anyMatch(batch -> !batch.belongsTo(product))) {
+            throw new IllegalArgumentException("All batches must belong to the product");
+        }
     }
 }

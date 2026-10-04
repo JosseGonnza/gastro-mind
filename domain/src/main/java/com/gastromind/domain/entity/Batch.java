@@ -68,6 +68,10 @@ public class Batch {
         return new Money(unitCost, purchasePrice.currency());
     }
 
+    public boolean belongsTo(Product product) {
+        return productId.equals(product.getId());
+    }
+
     public void consume(Quantity amountToConsume) {
         if (amountToConsume.isZero()) throw new IllegalArgumentException("Quantity cannot be zero or less");
         this.currentQuantity = this.currentQuantity.subtract(amountToConsume);

@@ -64,6 +64,22 @@ export interface GoodsReceipt {
   }[];
 }
 
+export interface GoodsReceiptSummary {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  deliveryNoteNumber: string;
+  receivedOn: string;
+  lineCount: number;
+  total: number;
+}
+
+export interface ReceiptFilter {
+  supplierId?: string;
+  from?: string;
+  to?: string;
+}
+
 export interface StockBatch {
   batchId: string;
   lotCode: string;
@@ -112,6 +128,23 @@ export async function createSupplier(baseUrl: string, supplier: NewSupplier): Pr
 
 export async function registerGoodsReceipt(baseUrl: string, receipt: NewGoodsReceipt): Promise<GoodsReceipt> {
   return post<GoodsReceipt>(`${baseUrl}/goods-receipts`, receipt);
+}
+
+export async function listGoodsReceipts(baseUrl: string, filter: ReceiptFilter = {}): Promise<GoodsReceiptSummary[]> {
+  const params = new URLSearchParams();
+  for (const [name, value] of Object.entries(filter)) {
+    if (value) {
+      params.set(name, value);
+    }
+  }
+  const query = params.size > 0 ? `?${params}` : '';
+  const response = await fetch(`${baseUrl}/goods-receipts${query}`);
+  return readBody<GoodsReceiptSummary[]>(response);
+}
+
+export async function getGoodsReceipt(baseUrl: string, id: string): Promise<GoodsReceipt> {
+  const response = await fetch(`${baseUrl}/goods-receipts/${encodeURIComponent(id)}`);
+  return readBody<GoodsReceipt>(response);
 }
 
 export async function getStock(baseUrl: string): Promise<ProductStock[]> {

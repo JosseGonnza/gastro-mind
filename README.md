@@ -8,7 +8,7 @@
 > Responde a tres preguntas de cualquier cocina: qué hay en cámara, qué hay
 > que gastar primero y cuánto cuesta de verdad cada plato.
 
-![El catálogo de productos con sus categorías y alérgenos](docs/captura-catalogo.png)
+![Lo que hay en cámara, en el ordenador, y el alta de un albarán, en el móvil](docs/capturas/portada.png)
 
 <sub>Datos de ejemplo cargados con <code>scripts/datos-ejemplo.sh</code>.</sub>
 
@@ -90,8 +90,21 @@ y el albarán sigue diciendo 5 kg, como la factura del proveedor.
 
 ## La web
 
-- **🗂️ Catálogo** — una tarjeta por producto con el color de su categoría, su
-  unidad y sus alérgenos como iconos, ordenado como en español.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/capturas/productos.png" alt="El catálogo de productos con sus categorías y alérgenos"><br><sub>Productos, con el filtro de alérgenos</sub></td>
+    <td width="50%"><img src="docs/capturas/nuevo-albaran.png" alt="El formulario para registrar un albarán, línea a línea"><br><sub>Nuevo albarán, línea a línea</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/capturas/albaranes.png" alt="El listado de albaranes con sus filtros y el total"><br><sub>Albaranes, por proveedor y fechas</sub></td>
+    <td width="50%"><img src="docs/capturas/albaran.png" alt="Un albarán con sus líneas, lotes e importes"><br><sub>Cada albarán, con sus lotes</sub></td>
+  </tr>
+</table>
+
+- **🧭 Por módulos** — menú lateral con Almacén, Compras y Catálogo. En el
+  móvil pasa a ser una barra que se desliza de lado.
+- **🗂️ Productos** — una tabla con el color de cada categoría, la unidad y los
+  alérgenos como iconos, ordenada como en español.
 - **🚫 Filtro por alérgenos** — tocas los que hay que evitar (uno o varios) y el
   catálogo deja solo lo que no lleva ninguno: *«Apto sin gluten y lácteos: 8 de
   12 productos»*. El filtro va en la URL (`/?sin=GLUTEN&sin=DAIRY`), así que se
@@ -99,12 +112,16 @@ y el albarán sigue diciendo 5 kg, como la factura del proveedor.
 - **➕ Nuevo producto** — formulario con los 14 alérgenos como fichas que se
   marcan con un toque. Si la API rechaza el producto, el formulario lo dice y
   conserva lo escrito.
-- **🧾 Nuevo albarán** — proveedor, número y tantas líneas como hagan falta. Los
-  decimales se escriben con coma (*2,5 kg*, *37,50 €*) y los errores de cada
-  línea se explican en español.
-- **🧊 Qué hay en cámara** — cada producto con su total y sus lotes, primero los
-  que caducan antes, con un aviso de color: caducado, hoy o mañana en rojo,
-  menos de cinco días en ámbar.
+- **🧊 En cámara** — cuántos productos y lotes hay, y cuántos caducan en menos
+  de cinco días. Debajo, cada producto con su total y sus lotes, primero los que
+  caducan antes, con un aviso de color: caducado, hoy o mañana en rojo, menos de
+  cinco días en ámbar.
+- **🧾 Albaranes** — listado con filtros por proveedor y fechas, y la suma de lo
+  que sale. Cada albarán tiene su página con sus líneas, lotes e importes.
+- **📝 Nuevo albarán** — proveedor, número y tantas líneas como hagan falta, en
+  filas como las de un programa de facturación. Los decimales se escriben con
+  coma (*2,5 kg*, *37,50 €*) y los errores de cada línea se explican en
+  español. Al registrarlo, lleva a su página.
 - **🚚 Proveedores** — listado y alta.
 - Funciona sin JavaScript en el navegador: las páginas se generan en el
   servidor y los formularios son HTML de toda la vida.

@@ -1,5 +1,6 @@
 package com.gastromind.infrastructure.web.supplier;
 
+import com.gastromind.infrastructure.DatabaseCleaner;
 import com.gastromind.infrastructure.TestcontainersConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,9 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.contains;
@@ -48,10 +47,7 @@ class SupplierControllerTest {
 
     @BeforeEach
     void cleanDatabase() throws SQLException {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate("DELETE FROM supplier");
-        }
+        DatabaseCleaner.clean(dataSource);
     }
 
     @Test

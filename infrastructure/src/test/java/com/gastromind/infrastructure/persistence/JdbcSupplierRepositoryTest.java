@@ -2,6 +2,7 @@ package com.gastromind.infrastructure.persistence;
 
 import com.gastromind.application.supplier.SupplierRepository;
 import com.gastromind.domain.entity.Supplier;
+import com.gastromind.infrastructure.DatabaseCleaner;
 import com.gastromind.infrastructure.TestcontainersConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,9 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,10 +31,7 @@ class JdbcSupplierRepositoryTest {
 
     @BeforeEach
     void cleanDatabase() throws SQLException {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate("DELETE FROM supplier");
-        }
+        DatabaseCleaner.clean(dataSource);
     }
 
     @Test

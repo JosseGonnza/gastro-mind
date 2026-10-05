@@ -5,6 +5,7 @@ import com.gastromind.domain.entity.Product;
 import com.gastromind.domain.valueobject.Allergen;
 import com.gastromind.domain.valueobject.Category;
 import com.gastromind.domain.valueobject.UnitOfMeasure;
+import com.gastromind.infrastructure.DatabaseCleaner;
 import com.gastromind.infrastructure.TestcontainersConfiguration;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,9 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,10 +38,7 @@ class JdbcProductRepositoryTest {
 
     @BeforeEach
     void cleanDatabase() throws SQLException {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate("DELETE FROM product");
-        }
+        DatabaseCleaner.clean(dataSource);
     }
 
     @Test

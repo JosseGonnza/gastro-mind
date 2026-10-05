@@ -49,37 +49,29 @@ if (Astro.request.method === 'POST') {
         : 'No se puede conectar con la API. ¿Está arrancada?';
   }
 }
-
-const field =
-  'mt-1.5 w-full rounded-xl border-0 bg-white px-4 py-2.5 text-stone-900 shadow-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brasa focus:outline-none';
 ---
 
-<Layout title="Nuevo producto">
-  <a href="/" class="text-sm font-semibold text-stone-500 hover:text-stone-800">← Volver al catálogo</a>
-  <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-stone-900">Nuevo producto</h1>
+<Layout title="Nuevo producto" subtitle="Ficha de producto con su categoría, unidad y alérgenos">
+  <a slot="actions" href="/" class="btn-secondary">← Volver a productos</a>
 
-  {
-    error && (
-      <p class="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 ring-1 ring-red-200">{error}</p>
-    )
-  }
+  {error && <p class="notice-error mb-6">{error}</p>}
 
-  <form method="post" class="mt-8 grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+  <form method="post" class="panel grid gap-8 p-6 lg:grid-cols-[1fr_1.3fr]">
     <div class="space-y-5">
       <label class="block">
-        <span class="text-sm font-semibold text-stone-700">Nombre</span>
-        <input name="name" required pattern=".*\S.*" maxlength="100" value={values.name} class={field} />
+        <span class="field-label">Nombre</span>
+        <input name="name" required pattern=".*\S.*" maxlength="100" value={values.name} class="field" />
       </label>
 
       <label class="block">
-        <span class="text-sm font-semibold text-stone-700">Descripción <span class="font-normal text-stone-400">(opcional)</span></span>
-        <textarea name="description" rows="3" class={field}>{values.description}</textarea>
+        <span class="field-label">Descripción <span class="font-normal text-stone-400">(opcional)</span></span>
+        <textarea name="description" rows="3" class="field">{values.description}</textarea>
       </label>
 
       <div class="grid grid-cols-2 gap-4">
         <label class="block">
-          <span class="text-sm font-semibold text-stone-700">Categoría</span>
-          <select name="category" class={field}>
+          <span class="field-label">Categoría</span>
+          <select name="category" class="field">
             {
               CATEGORIES.map((category) => (
                 <option value={category} selected={category === values.category}>
@@ -91,8 +83,8 @@ const field =
         </label>
 
         <label class="block">
-          <span class="text-sm font-semibold text-stone-700">Unidad</span>
-          <select name="unit" class={field}>
+          <span class="field-label">Unidad</span>
+          <select name="unit" class="field">
             {
               UNITS.map((unit) => (
                 <option value={unit} selected={unit === values.unit}>
@@ -106,12 +98,12 @@ const field =
     </div>
 
     <fieldset>
-      <legend class="text-sm font-semibold text-stone-700">Alérgenos</legend>
+      <legend class="field-label">Alérgenos</legend>
       <p class="text-xs text-stone-500">Marca todos los que contenga el producto.</p>
       <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {
           ALLERGENS.map((allergen) => (
-            <label class="flex cursor-pointer items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition select-none hover:ring-stone-300 has-[:checked]:bg-orange-50 has-[:checked]:text-stone-900 has-[:checked]:ring-2 has-[:checked]:ring-brasa">
+            <label class="flex cursor-pointer items-center gap-2 rounded-lg bg-white px-2.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition select-none hover:ring-stone-300 has-[:checked]:bg-orange-50 has-[:checked]:text-stone-900 has-[:checked]:ring-2 has-[:checked]:ring-brasa">
               <input
                 type="checkbox"
                 name="allergens"
@@ -119,7 +111,7 @@ const field =
                 checked={values.allergens.includes(allergen)}
                 class="sr-only"
               />
-              <AllergenIcon allergen={allergen} size={28} />
+              <AllergenIcon allergen={allergen} size={22} />
               {ALLERGEN_LABELS[allergen]}
             </label>
           ))
@@ -127,13 +119,9 @@ const field =
       </div>
     </fieldset>
 
-    <div class="lg:col-span-2">
-      <button
-        type="submit"
-        class="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
-      >
-        Guardar producto
-      </button>
+    <div class="flex gap-2 border-t border-stone-100 pt-5 lg:col-span-2">
+      <button type="submit" class="btn-primary">Guardar producto</button>
+      <a href="/" class="btn-secondary">Cancelar</a>
     </div>
   </form>
 </Layout>

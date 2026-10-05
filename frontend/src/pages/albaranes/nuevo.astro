@@ -5,6 +5,7 @@ import ReceiptLineFields from '../../components/ReceiptLineFields.astro';
 import { ApiError, listProducts, listSuppliers, registerGoodsReceipt, type Product, type Supplier } from '../../lib/api';
 import { todayIso } from '../../lib/expiry';
 import { readReceiptLines, rowsFromForm, type ReceiptFormRow } from '../../lib/receipt-form';
+import { RECEIPT_LINE_GRID } from '../../lib/receipt-grid';
 
 let suppliers: Supplier[] = [];
 let products: Product[] = [];
@@ -47,17 +48,14 @@ if (Astro.request.method === 'POST' && !apiDown) {
 const today = todayIso();
 const visibleRows: (ReceiptFormRow | undefined)[] = rows.length > 0 ? rows : [undefined, undefined, undefined];
 const ready = !apiDown && suppliers.length > 0 && products.length > 0;
-const field =
-  'mt-1.5 w-full rounded-xl border-0 bg-white px-4 py-2.5 text-stone-900 shadow-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brasa focus:outline-none';
 ---
 
-<Layout title="Nuevo albarán">
-  <h1 class="text-3xl font-extrabold tracking-tight text-stone-900">Nuevo albarán</h1>
-  <p class="mt-1 text-stone-500">Da entrada al género que acaba de llegar: cada línea se convierte en un lote.</p>
+<Layout title="Nuevo albarán" subtitle="Da entrada al género que acaba de llegar: cada línea se convierte en un lote">
+  <a slot="actions" href="/stock" class="btn-secondary">← Volver a cámara</a>
 
   {
     errors.length > 0 && (
-      <ul class="mt-6 space-y-1 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 ring-1 ring-red-200">
+      <ul class="notice-error mb-6 space-y-1">
         {errors.map((error) => (
           <li>{error}</li>
         ))}
@@ -67,13 +65,13 @@ const field =
 
   {
     apiDown ? (
-      <div class="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-red-200">
-        <p class="text-lg font-bold text-red-700">No se puede conectar con la API</p>
+      <div class="panel p-8 text-center">
+        <p class="font-semibold text-red-700">No se puede conectar con la API</p>
       </div>
     ) : !ready ? (
-      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
-        <p class="text-lg font-bold text-stone-700">Antes de registrar un albarán necesitas…</p>
-        <p class="mt-2 text-sm text-stone-500">
+      <div class="panel p-10 text-center">
+        <p class="font-semibold text-stone-700">Antes de registrar un albarán necesitas…</p>
+        <p class="mt-1 text-sm text-stone-500">
           {suppliers.length === 0 && (
             <a href="/proveedores/nuevo" class="font-semibold text-brasa-oscura hover:underline">
               un proveedor
@@ -88,11 +86,12 @@ const field =
         </p>
       </div>
     ) : (
-      <form method="post" class="mt-8 space-y-6">
-        <div class="grid max-w-3xl gap-5 sm:grid-cols-2">
+      <form method="post" class="panel overflow-hidden">
+        <div class="border-b border-stone-200 p-6">
+          <div class="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
           <label class="block">
-            <span class="text-sm font-semibold text-stone-700">Proveedor</span>
-            <select name="supplierId" required class={field}>
+            <span class="field-label">Proveedor</span>
+            <select name="supplierId" required class="field">
               <option value="">Elige un proveedor…</option>
               {suppliers.map((supplier) => (
                 <option value={supplier.id} selected={supplier.id === supplierId}>
@@ -102,37 +101,44 @@ const field =
             </select>
           </label>
           <label class="block">
-            <span class="text-sm font-semibold text-stone-700">Número de albarán</span>
-            <input name="deliveryNoteNumber" required pattern=".*\S.*" maxlength="50" value={deliveryNoteNumber} class={field} />
+            <span class="field-label">Número de albarán</span>
+            <input name="deliveryNoteNumber" required pattern=".*\S.*" maxlength="50" value={deliveryNoteNumber} class="field font-mono" />
           </label>
+          </div>
         </div>
 
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Líneas</legend>
-          <p class="text-xs text-stone-500">Las líneas sin producto no se tienen en cuenta. Puedes escribir los decimales con coma.</p>
-          <div data-lines class="mt-3 space-y-3">
-            {visibleRows.map((row) => (
-              <ReceiptLineFields products={products} row={row} minDate={today} />
-            ))}
-          </div>
-          <template id="line-template">
-            <ReceiptLineFields products={products} minDate={today} />
-          </template>
-          <button
-            type="button"
-            data-add-line
-            class="mt-3 rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 transition hover:ring-stone-400"
-          >
+        <div
+          class:list={[
+            'hidden gap-x-3 border-b border-stone-200 bg-stone-50 px-4 py-2.5 text-xs font-semibold tracking-wide text-stone-500 uppercase lg:grid',
+            RECEIPT_LINE_GRID,
+          ]}
+        >
+          <span>Producto</span>
+          <span class="text-right">Cantidad</span>
+          <span>Unidad</span>
+          <span class="text-right">Importe (€)</span>
+          <span>Caducidad</span>
+          <span>Lote</span>
+        </div>
+        <div data-lines>
+          {visibleRows.map((row) => (
+            <ReceiptLineFields products={products} row={row} minDate={today} />
+          ))}
+        </div>
+        <template id="line-template">
+          <ReceiptLineFields products={products} minDate={today} />
+        </template>
+        <div class="px-4 py-3">
+          <button type="button" data-add-line class="btn-secondary">
             + Añadir línea
           </button>
-        </fieldset>
+          <p class="mt-2 text-xs text-stone-500">Las líneas sin producto no se tienen en cuenta. Los decimales se escriben con coma.</p>
+        </div>
 
-        <button
-          type="submit"
-          class="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
-        >
-          Registrar albarán
-        </button>
+        <div class="flex gap-2 border-t border-stone-200 bg-stone-50 px-6 py-4">
+          <button type="submit" class="btn-primary">Registrar albarán</button>
+          <a href="/stock" class="btn-secondary">Cancelar</a>
+        </div>
       </form>
     )
   }

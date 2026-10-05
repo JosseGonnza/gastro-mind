@@ -6,6 +6,7 @@ import com.gastromind.application.product.ListProducts;
 import com.gastromind.application.product.ProductRepository;
 import com.gastromind.application.receipt.GetGoodsReceipt;
 import com.gastromind.application.receipt.GoodsReceiptRepository;
+import com.gastromind.application.receipt.ListGoodsReceipts;
 import com.gastromind.application.receipt.ReceiveGoods;
 import com.gastromind.application.stock.BatchRepository;
 import com.gastromind.application.stock.GetStock;
@@ -58,6 +59,11 @@ public class UseCaseConfiguration {
     @Bean
     GetGoodsReceipt getGoodsReceipt(GoodsReceiptRepository goodsReceiptRepository) {
         return new GetGoodsReceipt(goodsReceiptRepository);
+    }
+
+    @Bean
+    ListGoodsReceipts listGoodsReceipts(GoodsReceiptRepository goodsReceiptRepository) {
+        return new ListGoodsReceipts(goodsReceiptRepository);
     }
 
     @Bean

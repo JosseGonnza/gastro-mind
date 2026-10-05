@@ -142,6 +142,27 @@ class CostSheetServiceTest {
     }
 
     @Test
+    @DisplayName("juntar los alérgenos de todos los ingredientes, también de los que no tienen precio")
+    void shouldGatherAllergensOfEveryIngredient() {
+        Product egg = Product.create("Huevo campero", null, Category.OTHER, UnitOfMeasure.UNIT, Set.of(Allergen.EGGS));
+        Recipe recipe = grilledHake();
+        recipe.addIngredient(RecipeIngredient.of(egg, Quantity.of(1, UnitOfMeasure.UNIT)));
+
+        CostSheet sheet = costSheetService.calculate(recipe, List.of(hake, potato, oil, egg), lastPurchases);
+
+        assertThat(sheet.allergens()).containsExactly(Allergen.EGGS, Allergen.FISH);
+    }
+
+    @Test
+    @DisplayName("no tener alérgenos si ningún ingrediente los tiene")
+    void shouldHaveNoAllergensWhenNoIngredientHasThem() {
+        Recipe recipe = Recipe.create("Patatas cocidas", null, 1, null);
+        recipe.addIngredient(RecipeIngredient.of(potato, Quantity.of(300, UnitOfMeasure.GRAM)));
+
+        assertThat(costSheetService.calculate(recipe, List.of(potato), lastPurchases).allergens()).isEmpty();
+    }
+
+    @Test
     @DisplayName("lanzar excepción si falta el producto de algún ingrediente")
     void shouldThrowExceptionWhenAProductIsMissing() {
         assertThatThrownBy(() -> costSheetService.calculate(grilledHake(), List.of(hake, potato), lastPurchases))

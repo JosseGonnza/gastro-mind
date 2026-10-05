@@ -3,7 +3,10 @@ package com.gastromind.infrastructure.persistence;
 import com.gastromind.application.product.ProductRepository;
 import com.gastromind.application.receipt.DuplicateDeliveryNoteException;
 import com.gastromind.application.receipt.GoodsReceiptRepository;
+import com.gastromind.application.receipt.GoodsReceiptSummary;
+import com.gastromind.application.receipt.ReceiptFilter;
 import com.gastromind.application.supplier.SupplierRepository;
+import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.GoodsReceipt;
 import com.gastromind.domain.entity.Product;
 import com.gastromind.domain.entity.Supplier;
@@ -24,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -77,6 +81,16 @@ class JdbcGoodsReceiptRepositoryTest {
         return GoodsReceipt.register(supplier, deliveryNoteNumber, lines);
     }
 
+    private ReceivedGoods receiveOn(Supplier from, String deliveryNoteNumber, LocalDate receivedOn, Product... products) {
+        List<Batch> batches = Arrays.stream(products)
+                .map(product -> Batch.restore(UUID.randomUUID(), product.getId(), UnitOfMeasure.KILOGRAM,
+                        deliveryNoteNumber + "-1", receivedOn, receivedOn.plusDays(3), Money.of(37.5),
+                        Quantity.of(2.5, UnitOfMeasure.KILOGRAM), Quantity.of(2.5, UnitOfMeasure.KILOGRAM)))
+                .toList();
+        GoodsReceipt receipt = GoodsReceipt.restore(UUID.randomUUID(), from.getId(), deliveryNoteNumber, receivedOn, batches);
+        return new ReceivedGoods(receipt, batches);
+    }
+
     @Test
     @DisplayName("guardar un albarán con sus lotes y recuperarlo por su id")
     void shouldSaveAndFindReceiptById() {
@@ -127,6 +141,43 @@ class JdbcGoodsReceiptRepositoryTest {
                 .isInstanceOf(DuplicateDeliveryNoteException.class)
                 .hasMessage("Supplier already has a delivery note ALB-1234");
         assertThat(countRows("batch")).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("resumir cada albarán con su proveedor, sus líneas y su total, primero los más recientes")
+    void shouldSummarizeReceiptsNewestFirst() {
+        LocalDate today = LocalDate.now();
+        ReceivedGoods older = receiveOn(supplier, "ALB-1", today.minusDays(7), prawns, hake);
+        ReceivedGoods newer = receiveOn(supplier, "ALB-2", today, prawns);
+        goodsReceiptRepository.save(older);
+        goodsReceiptRepository.save(newer);
+
+        List<GoodsReceiptSummary> summaries = goodsReceiptRepository.findSummaries(ReceiptFilter.all());
+
+        assertThat(summaries).containsExactly(
+                new GoodsReceiptSummary(newer.receipt().getId(), supplier.getId(), "Pescados Cimadevilla", "ALB-2",
+                        today, 1, new BigDecimal("37.50")),
+                new GoodsReceiptSummary(older.receipt().getId(), supplier.getId(), "Pescados Cimadevilla", "ALB-1",
+                        today.minusDays(7), 2, new BigDecimal("75.00")));
+    }
+
+    @Test
+    @DisplayName("filtrar por proveedor y por fechas, con los dos extremos incluidos")
+    void shouldFilterBySupplierAndDateRange() {
+        Supplier otherSupplier = Supplier.create("Mariscos El Muelle", null, null, null);
+        supplierRepository.save(otherSupplier);
+        LocalDate today = LocalDate.now();
+        goodsReceiptRepository.save(receiveOn(supplier, "ALB-1", today.minusDays(10), prawns));
+        goodsReceiptRepository.save(receiveOn(supplier, "ALB-2", today.minusDays(5), prawns));
+        goodsReceiptRepository.save(receiveOn(supplier, "ALB-3", today, prawns));
+        goodsReceiptRepository.save(receiveOn(otherSupplier, "F-1", today.minusDays(5), hake));
+
+        assertThat(goodsReceiptRepository.findSummaries(new ReceiptFilter(supplier.getId(), today.minusDays(5), today)))
+                .extracting(GoodsReceiptSummary::deliveryNoteNumber)
+                .containsExactly("ALB-3", "ALB-2");
+        assertThat(goodsReceiptRepository.findSummaries(new ReceiptFilter(null, today.minusDays(5), today.minusDays(5))))
+                .extracting(GoodsReceiptSummary::deliveryNoteNumber)
+                .containsExactlyInAnyOrder("ALB-2", "F-1");
     }
 
     private int countRows(String table) throws SQLException {

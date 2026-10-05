@@ -1,0 +1,163 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import ReceiptLineFields from '../../components/ReceiptLineFields.astro';
+import { ApiError, listProducts, listSuppliers, registerGoodsReceipt, type Product, type Supplier } from '../../lib/api';
+import { todayIso } from '../../lib/expiry';
+import { readReceiptLines, rowsFromForm, type ReceiptFormRow } from '../../lib/receipt-form';
+
+let suppliers: Supplier[] = [];
+let products: Product[] = [];
+let apiDown = false;
+try {
+  [suppliers, products] = await Promise.all([listSuppliers(API_URL), listProducts(API_URL)]);
+} catch {
+  apiDown = true;
+}
+
+let errors: string[] = [];
+let supplierId = '';
+let deliveryNoteNumber = '';
+let rows: ReceiptFormRow[] = [];
+
+if (Astro.request.method === 'POST' && !apiDown) {
+  const form = await Astro.request.formData();
+  supplierId = String(form.get('supplierId') ?? '');
+  deliveryNoteNumber = String(form.get('deliveryNoteNumber') ?? '');
+  rows = rowsFromForm(form);
+  const result = readReceiptLines(rows);
+  errors = result.errors;
+  if (errors.length === 0 && result.lines.length === 0) {
+    errors = ['Añade al menos una línea con su producto'];
+  }
+  if (errors.length === 0) {
+    try {
+      const receipt = await registerGoodsReceipt(API_URL, { supplierId, deliveryNoteNumber, lines: result.lines });
+      return Astro.redirect(`/stock?albaran=${encodeURIComponent(receipt.deliveryNoteNumber)}&total=${receipt.total}`);
+    } catch (e) {
+      errors = [
+        e instanceof ApiError
+          ? `La API ha rechazado el albarán: ${e.message}`
+          : 'No se puede conectar con la API. ¿Está arrancada?',
+      ];
+    }
+  }
+}
+
+const today = todayIso();
+const visibleRows: (ReceiptFormRow | undefined)[] = rows.length > 0 ? rows : [undefined, undefined, undefined];
+const ready = !apiDown && suppliers.length > 0 && products.length > 0;
+const field =
+  'mt-1.5 w-full rounded-xl border-0 bg-white px-4 py-2.5 text-stone-900 shadow-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brasa focus:outline-none';
+---
+
+<Layout title="Nuevo albarán">
+  <h1 class="text-3xl font-extrabold tracking-tight text-stone-900">Nuevo albarán</h1>
+  <p class="mt-1 text-stone-500">Da entrada al género que acaba de llegar: cada línea se convierte en un lote.</p>
+
+  {
+    errors.length > 0 && (
+      <ul class="mt-6 space-y-1 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 ring-1 ring-red-200">
+        {errors.map((error) => (
+          <li>{error}</li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    apiDown ? (
+      <div class="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-red-200">
+        <p class="text-lg font-bold text-red-700">No se puede conectar con la API</p>
+      </div>
+    ) : !ready ? (
+      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
+        <p class="text-lg font-bold text-stone-700">Antes de registrar un albarán necesitas…</p>
+        <p class="mt-2 text-sm text-stone-500">
+          {suppliers.length === 0 && (
+            <a href="/proveedores/nuevo" class="font-semibold text-brasa-oscura hover:underline">
+              un proveedor
+            </a>
+          )}
+          {suppliers.length === 0 && products.length === 0 && ' y '}
+          {products.length === 0 && (
+            <a href="/productos/nuevo" class="font-semibold text-brasa-oscura hover:underline">
+              algún producto en el catálogo
+            </a>
+          )}
+        </p>
+      </div>
+    ) : (
+      <form method="post" class="mt-8 space-y-6">
+        <div class="grid max-w-3xl gap-5 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm font-semibold text-stone-700">Proveedor</span>
+            <select name="supplierId" required class={field}>
+              <option value="">Elige un proveedor…</option>
+              {suppliers.map((supplier) => (
+                <option value={supplier.id} selected={supplier.id === supplierId}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-sm font-semibold text-stone-700">Número de albarán</span>
+            <input name="deliveryNoteNumber" required pattern=".*\S.*" maxlength="50" value={deliveryNoteNumber} class={field} />
+          </label>
+        </div>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Líneas</legend>
+          <p class="text-xs text-stone-500">Las líneas sin producto no se tienen en cuenta. Puedes escribir los decimales con coma.</p>
+          <div data-lines class="mt-3 space-y-3">
+            {visibleRows.map((row) => (
+              <ReceiptLineFields products={products} row={row} minDate={today} />
+            ))}
+          </div>
+          <template id="line-template">
+            <ReceiptLineFields products={products} minDate={today} />
+          </template>
+          <button
+            type="button"
+            data-add-line
+            class="mt-3 rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 transition hover:ring-stone-400"
+          >
+            + Añadir línea
+          </button>
+        </fieldset>
+
+        <button
+          type="submit"
+          class="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
+        >
+          Registrar albarán
+        </button>
+      </form>
+    )
+  }
+</Layout>
+
+<script>
+  const lines = document.querySelector<HTMLElement>('[data-lines]');
+  const template = document.querySelector<HTMLTemplateElement>('#line-template');
+
+  document.querySelector('[data-add-line]')?.addEventListener('click', () => {
+    if (lines && template) {
+      lines.append(template.content.cloneNode(true));
+    }
+  });
+
+  // Al elegir producto, la unidad pasa a ser la suya (se puede cambiar si el albarán viene en otra)
+  lines?.addEventListener('change', (event) => {
+    const select = event.target;
+    if (!(select instanceof HTMLSelectElement) || !select.matches('[data-product]')) {
+      return;
+    }
+    const unit = select.selectedOptions[0]?.dataset.unit;
+    const unitSelect = select.closest('[data-line]')?.querySelector<HTMLSelectElement>('[data-unit-select]');
+    if (unit && unitSelect) {
+      unitSelect.value = unit;
+    }
+  });
+</script>

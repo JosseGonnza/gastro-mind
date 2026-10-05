@@ -79,6 +79,31 @@ class CostSheetServiceTest {
     }
 
     @Test
+    @DisplayName("estar completo, con la última compra de cada línea, si todos los productos tienen precio")
+    void shouldBeCompleteWhenEveryProductHasPrice() {
+        CostSheet sheet = costSheetService.calculate(grilledHake(), List.of(hake, potato, oil), lastPurchases);
+
+        assertThat(sheet.complete()).isTrue();
+        assertThat(sheet.lines().getFirst().lastPurchase()).isEqualTo(lastPurchases.get(hake.getId()));
+    }
+
+    @Test
+    @DisplayName("dejar sin precio la línea de un producto que no se ha comprado nunca y avisar de que está incompleto")
+    void shouldBeIncompleteWhenAProductHasNoPrice() {
+        Product salt = Product.create("Sal en escamas", null, Category.SPICE, UnitOfMeasure.GRAM, Set.of());
+        Recipe recipe = grilledHake();
+        recipe.addIngredient(RecipeIngredient.of(salt, Quantity.of(5, UnitOfMeasure.GRAM)));
+
+        CostSheet sheet = costSheetService.calculate(recipe, List.of(hake, potato, oil, salt), lastPurchases);
+
+        CostSheetLine saltLine = sheet.lines().getLast();
+        assertThat(saltLine.lastPurchase()).isNull();
+        assertThat(saltLine.cost()).isNull();
+        assertThat(sheet.complete()).isFalse();
+        assertThat(sheet.totalCost()).isEqualTo(Money.of(15.12));
+    }
+
+    @Test
     @DisplayName("lanzar excepción si falta el producto de algún ingrediente")
     void shouldThrowExceptionWhenAProductIsMissing() {
         assertThatThrownBy(() -> costSheetService.calculate(grilledHake(), List.of(hake, potato), lastPurchases))

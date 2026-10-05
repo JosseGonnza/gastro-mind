@@ -3,7 +3,9 @@ import {
   ApiError,
   createProduct,
   createSupplier,
+  getGoodsReceipt,
   getStock,
+  listGoodsReceipts,
   listProducts,
   listSuppliers,
   registerGoodsReceipt,
@@ -99,6 +101,47 @@ describe('El cliente de la API debería', () => {
     expect(url).toBe(`${API}/goods-receipts`);
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual(receipt);
+  });
+
+  it('listar los albaranes enviando solo los filtros que tienen valor', async () => {
+    const summary = {
+      id: 'r-1',
+      supplierId: 's-1',
+      supplierName: 'Pescados Cimadevilla',
+      deliveryNoteNumber: 'ALB-1234',
+      receivedOn: '2026-10-05',
+      lineCount: 2,
+      total: 105,
+    };
+    const fetchMock = respondWith(200, [summary]);
+
+    const receipts = await listGoodsReceipts(API, { supplierId: 's-1', from: '', to: '2026-10-31' });
+
+    expect(receipts).toEqual([summary]);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/goods-receipts?supplierId=s-1&to=2026-10-31`);
+  });
+
+  it('listar todos los albaranes si no hay filtros', async () => {
+    const fetchMock = respondWith(200, []);
+
+    await listGoodsReceipts(API);
+
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/goods-receipts`);
+  });
+
+  it('consultar un albarán por su id', async () => {
+    const fetchMock = respondWith(200, { id: 'r-1', lines: [] });
+
+    expect(await getGoodsReceipt(API, 'r-1')).toMatchObject({ id: 'r-1' });
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/goods-receipts/r-1`);
+  });
+
+  it('no dejar que el id del albarán cambie la ruta de la API', async () => {
+    const fetchMock = respondWith(400, {});
+
+    await getGoodsReceipt(API, '../stock').catch(() => undefined);
+
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/goods-receipts/..%2Fstock`);
   });
 
   it('consultar el stock', async () => {

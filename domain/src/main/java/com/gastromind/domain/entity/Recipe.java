@@ -1,11 +1,8 @@
 package com.gastromind.domain.entity;
 
 import com.gastromind.domain.exception.DomainValidationException;
-import com.gastromind.domain.valueobject.Difficulty;
 import com.gastromind.domain.valueobject.RecipeIngredient;
-import com.gastromind.domain.valueobject.RecipeStep;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,33 +13,20 @@ public class Recipe {
     private final UUID id;
     private final String name;
     private final String description;
-    private final Duration cookingTime;
-    private final Difficulty difficulty;
     private final int portions;
     private final List<RecipeIngredient> ingredients;
-    private final List<RecipeStep> steps;
 
-    private Recipe(UUID id, String name, String description, Duration cookingTime, Difficulty difficulty, int portions) {
-        validateInvariants(name, cookingTime, difficulty, portions);
+    private Recipe(UUID id, String name, String description, int portions) {
+        validateInvariants(name, portions);
         this.id = id;
         this.name = name;
         this.description = description;
-        this.cookingTime = cookingTime;
-        this.difficulty = difficulty;
         this.portions = portions;
         this.ingredients = new ArrayList<>();
-        this.steps = new ArrayList<>();
     }
 
-    public static Recipe create(String name, String description, Duration cookingTime,
-                                Difficulty difficulty, int portions) {
-        return new Recipe(
-                UUID.randomUUID(),
-                name,
-                description,
-                cookingTime,
-                difficulty,
-                portions);
+    public static Recipe create(String name, String description, int portions) {
+        return new Recipe(UUID.randomUUID(), name, description, portions);
     }
 
     public void addIngredient(RecipeIngredient ingredient) {
@@ -55,26 +39,13 @@ public class Recipe {
         ingredients.add(ingredient);
     }
 
-    public void addStep(RecipeStep step) {
-        if (step == null) {
-            throw new DomainValidationException("Step cannot be null");
-        }
-        steps.add(step);
-    }
-
     private boolean isAnyMatch(RecipeIngredient ingredient) {
         return ingredients.stream().anyMatch(i -> i.productId().equals(ingredient.productId()));
     }
 
-    private static void validateInvariants(String name, Duration cookingTime, Difficulty difficulty, int portions) {
+    private static void validateInvariants(String name, int portions) {
         if (name == null || name.isBlank()) {
             throw new DomainValidationException("Name cannot be empty");
-        }
-        if (cookingTime == null) {
-            throw new DomainValidationException("Cooking time cannot be null");
-        }
-        if (difficulty == null) {
-            throw new DomainValidationException("Difficulty cannot be null");
         }
         if (portions <= 0) {
             throw new DomainValidationException("Portions must be greater than zero");
@@ -93,23 +64,11 @@ public class Recipe {
         return description;
     }
 
-    public Duration getCookingTime() {
-        return cookingTime;
-    }
-
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
-
     public int getPortions() {
         return portions;
     }
 
     public List<RecipeIngredient> getIngredients() {
         return Collections.unmodifiableList(ingredients);
-    }
-
-    public List<RecipeStep> getSteps() {
-        return Collections.unmodifiableList(steps);
     }
 }

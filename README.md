@@ -64,8 +64,8 @@ de ese arroz es **24 €**, no un precio medio.
   precio de compra y lo que queda de él.
 - **🧊 Stock** — qué hay de cada producto, en qué lotes y cuándo caduca cada
   uno, y consumo FEFO.
-- **📖 Recetas** — ingredientes sin productos repetidos, pasos, raciones,
-  tiempo y dificultad.
+- **📖 Recetas** — nombre, descripción, raciones e ingredientes sin productos
+  repetidos.
 - **💶 Escandallo** — coste de un ingrediente según los lotes que consume y
   coste total de una receta.
 

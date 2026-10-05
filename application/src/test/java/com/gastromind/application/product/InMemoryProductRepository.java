@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-class InMemoryProductRepository implements ProductRepository {
+public class InMemoryProductRepository implements ProductRepository {
 
     private final Map<UUID, Product> products = new LinkedHashMap<>();
 

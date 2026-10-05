@@ -118,4 +118,19 @@ class ReceiveGoodsTest {
                 .hasMessage("A goods receipt needs at least one line");
         assertThat(goodsReceiptRepository.savedBatches()).isEmpty();
     }
+
+    @Test
+    @DisplayName("rechazar un albarán sin proveedor o con una línea sin producto, sin guardar nada")
+    void shouldRejectMissingIds() {
+        ReceiveGoodsCommand withoutSupplier = new ReceiveGoodsCommand(null, "ALB-1234", List.of(line(prawns.getId(), null)));
+        ReceiveGoodsCommand lineWithoutProduct = new ReceiveGoodsCommand(supplier.getId(), "ALB-1234", List.of(line(null, null)));
+
+        assertThatThrownBy(() -> receiveGoods.execute(withoutSupplier))
+                .isInstanceOf(DomainValidationException.class)
+                .hasMessage("Supplier cannot be null");
+        assertThatThrownBy(() -> receiveGoods.execute(lineWithoutProduct))
+                .isInstanceOf(DomainValidationException.class)
+                .hasMessage("Product cannot be null");
+        assertThat(goodsReceiptRepository.savedBatches()).isEmpty();
+    }
 }

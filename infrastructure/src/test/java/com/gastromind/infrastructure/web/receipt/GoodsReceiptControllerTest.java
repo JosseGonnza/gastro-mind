@@ -159,4 +159,15 @@ class GoodsReceiptControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Supplier not found: " + unknownSupplier));
     }
+
+    @Test
+    @DisplayName("responder 400 si falta el proveedor")
+    void shouldReturnBadRequestWhenSupplierIsMissing() throws Exception {
+        register("""
+                {"deliveryNoteNumber": "ALB-1234", "lines": [{"productId": "%s", "quantity": 1, "unit": "KILOGRAM",
+                 "amount": 15.00, "expirationDate": "%s"}]}
+                """.formatted(hake.getId(), LocalDate.now().plusDays(2)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Supplier cannot be null"));
+    }
 }

@@ -17,6 +17,6 @@ const STYLES: Record<ExpiryLevel, string> = {
 };
 ---
 
-<span class:list={['inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', STYLES[status.level]]}>
+<span class:list={['inline-flex rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap', STYLES[status.level]]}>
   {status.label}
 </span>

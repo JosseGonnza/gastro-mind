@@ -142,6 +142,26 @@ class GoodsReceiptControllerTest {
     }
 
     @Test
+    @DisplayName("ignorar los filtros que llegan vacíos, como los de un formulario en blanco")
+    void shouldIgnoreEmptyFilters() throws Exception {
+        register(receiptJson(supplier.getId(), "ALB-1234")).andExpect(status().isCreated());
+
+        mockMvc.perform(get("/goods-receipts").param("supplierId", "").param("from", "").param("to", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("responder 400 si el rango de fechas está al revés")
+    void shouldReturnBadRequestWhenDateRangeIsInverted() throws Exception {
+        mockMvc.perform(get("/goods-receipts")
+                        .param("from", LocalDate.now().toString())
+                        .param("to", LocalDate.now().minusDays(1).toString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("From date cannot be after to date"));
+    }
+
+    @Test
     @DisplayName("responder 404 si el albarán no existe")
     void shouldReturnNotFoundWhenReceiptDoesNotExist() throws Exception {
         UUID unknownId = UUID.randomUUID();

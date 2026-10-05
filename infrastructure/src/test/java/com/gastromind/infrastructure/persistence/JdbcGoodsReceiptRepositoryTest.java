@@ -1,6 +1,7 @@
 package com.gastromind.infrastructure.persistence;
 
 import com.gastromind.application.product.ProductRepository;
+import com.gastromind.application.receipt.DuplicateDeliveryNoteException;
 import com.gastromind.application.receipt.GoodsReceiptRepository;
 import com.gastromind.application.supplier.SupplierRepository;
 import com.gastromind.domain.entity.GoodsReceipt;
@@ -117,12 +118,15 @@ class JdbcGoodsReceiptRepositoryTest {
     }
 
     @Test
-    @DisplayName("rechazar un número de albarán repetido del mismo proveedor")
-    void shouldRejectDuplicatedDeliveryNoteNumberForTheSameSupplier() {
+    @DisplayName("rechazar un número de albarán repetido del mismo proveedor, aunque se cuele la comprobación previa")
+    void shouldRejectDuplicatedDeliveryNoteNumberForTheSameSupplier() throws SQLException {
         goodsReceiptRepository.save(receive("ALB-1234", prawns));
 
+        //Simula dos registros a la vez: los dos pasan el "¿ya existe?" y es la base de datos quien frena al segundo
         assertThatThrownBy(() -> goodsReceiptRepository.save(receive("ALB-1234", hake)))
-                .isInstanceOf(RepositoryException.class);
+                .isInstanceOf(DuplicateDeliveryNoteException.class)
+                .hasMessage("Supplier already has a delivery note ALB-1234");
+        assertThat(countRows("batch")).isEqualTo(1);
     }
 
     private int countRows(String table) throws SQLException {

@@ -3,6 +3,7 @@ package com.gastromind.domain.service;
 import com.gastromind.domain.entity.Product;
 import com.gastromind.domain.entity.Recipe;
 import com.gastromind.domain.exception.DomainValidationException;
+import com.gastromind.domain.valueobject.Allergen;
 import com.gastromind.domain.valueobject.CostSheet;
 import com.gastromind.domain.valueobject.CostSheetLine;
 import com.gastromind.domain.valueobject.Money;
@@ -14,6 +15,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,11 +34,13 @@ public class CostSheetService {
         List<CostSheetLine> lines = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         boolean complete = true;
+        EnumSet<Allergen> allergens = EnumSet.noneOf(Allergen.class);
         for (RecipeIngredient ingredient : recipe.getIngredients()) {
             Product product = productsById.get(ingredient.productId());
             if (product == null) {
                 throw new DomainValidationException("Missing product for ingredient " + ingredient.productId());
             }
+            allergens.addAll(product.getAllergens());
             PurchasePrice lastPurchase = lastPurchases.get(product.getId());
             Money cost = null;
             if (lastPurchase == null) {
@@ -52,12 +56,12 @@ public class CostSheetService {
         BigDecimal perPortion = total.divide(BigDecimal.valueOf(recipe.getPortions()), MathContext.DECIMAL64);
         Money salePrice = recipe.getSalePrice();
         if (salePrice == null) {
-            return new CostSheet(lines, Money.of(total), Money.of(perPortion), complete, null, null, null, null);
+            return new CostSheet(lines, Money.of(total), Money.of(perPortion), complete, null, null, null, null, allergens);
         }
         BigDecimal withoutVat = salePrice.amount().divide(VAT_MULTIPLIER, MathContext.DECIMAL64);
         BigDecimal foodCost = perPortion.multiply(ONE_HUNDRED).divide(withoutVat, 1, RoundingMode.HALF_EVEN);
         BigDecimal margin = withoutVat.subtract(perPortion).setScale(2, RoundingMode.HALF_EVEN);
         return new CostSheet(lines, Money.of(total), Money.of(perPortion), complete,
-                salePrice, Money.of(withoutVat), foodCost, margin);
+                salePrice, Money.of(withoutVat), foodCost, margin, allergens);
     }
 }

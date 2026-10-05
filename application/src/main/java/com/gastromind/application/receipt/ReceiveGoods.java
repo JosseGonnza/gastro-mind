@@ -7,6 +7,7 @@ import com.gastromind.application.supplier.SupplierRepository;
 import com.gastromind.domain.entity.GoodsReceipt;
 import com.gastromind.domain.entity.Product;
 import com.gastromind.domain.entity.Supplier;
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.NewReceiptLine;
 import com.gastromind.domain.valueobject.Quantity;
@@ -28,6 +29,7 @@ public class ReceiveGoods {
     }
 
     public GoodsReceipt execute(ReceiveGoodsCommand command) {
+        if (command.supplierId() == null) throw new DomainValidationException("Supplier cannot be null");
         Supplier supplier = supplierRepository.findById(command.supplierId())
                 .orElseThrow(() -> new SupplierNotFoundException(command.supplierId()));
         List<NewReceiptLine> lines = command.lines() == null ? List.of() : command.lines().stream()
@@ -45,6 +47,8 @@ public class ReceiveGoods {
     }
 
     private NewReceiptLine toNewLine(ReceiveGoodsCommand.Line line) {
+        if (line == null) throw new DomainValidationException("Receipt line cannot be null");
+        if (line.productId() == null) throw new DomainValidationException("Product cannot be null");
         Product product = productRepository.findById(line.productId())
                 .orElseThrow(() -> new ProductNotFoundException(line.productId()));
         Money amount = line.amount() == null ? null : Money.of(line.amount());

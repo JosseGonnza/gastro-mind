@@ -144,4 +144,23 @@ class JdbcProductRepositoryTest {
 
         assertThat(products).isEmpty();
     }
+
+    @Test
+    @DisplayName("buscar varios productos por sus ids en una sola consulta, ignorando los que no existen")
+    void shouldFindProductsByIds() {
+        Product rice = Product.create("Arroz bomba", "Especial paella", Category.GRAIN, UnitOfMeasure.KILOGRAM, Set.of());
+        Product bread = Product.create("Pan de semillas", "Pan con sésamo", Category.BAKERY, UnitOfMeasure.UNIT,
+                Set.of(Allergen.GLUTEN, Allergen.SESAME));
+        Product tomato = Product.create("Tomate", "Tomate pera", Category.VEGETABLE, UnitOfMeasure.KILOGRAM, Set.of());
+        productRepository.save(rice);
+        productRepository.save(bread);
+        productRepository.save(tomato);
+
+        List<Product> found = productRepository.findAllById(List.of(bread.getId(), rice.getId(), UUID.randomUUID()));
+
+        assertThat(found)
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactlyInAnyOrder(rice, bread);
+        assertThat(productRepository.findAllById(List.of())).isEmpty();
+    }
 }

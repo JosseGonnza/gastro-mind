@@ -14,6 +14,11 @@ import com.gastromind.domain.valueobject.Quantity;
 import com.gastromind.domain.valueobject.ReceivedGoods;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ReceiveGoods {
 
@@ -32,8 +37,10 @@ public class ReceiveGoods {
         if (command.supplierId() == null) throw new DomainValidationException("Supplier cannot be null");
         Supplier supplier = supplierRepository.findById(command.supplierId())
                 .orElseThrow(() -> new SupplierNotFoundException(command.supplierId()));
-        List<NewReceiptLine> lines = command.lines() == null ? List.of() : command.lines().stream()
-                .map(this::toNewLine)
+        List<ReceiveGoodsCommand.Line> commandLines = command.lines() == null ? List.of() : command.lines();
+        Map<UUID, Product> products = findProducts(commandLines);
+        List<NewReceiptLine> lines = commandLines.stream()
+                .map(line -> toNewLine(line, products))
                 .toList();
 
         ReceivedGoods received = GoodsReceipt.register(supplier, command.deliveryNoteNumber(), lines);
@@ -46,11 +53,22 @@ public class ReceiveGoods {
         return received.receipt();
     }
 
-    private NewReceiptLine toNewLine(ReceiveGoodsCommand.Line line) {
-        if (line == null) throw new DomainValidationException("Receipt line cannot be null");
-        if (line.productId() == null) throw new DomainValidationException("Product cannot be null");
-        Product product = productRepository.findById(line.productId())
-                .orElseThrow(() -> new ProductNotFoundException(line.productId()));
+    //Todos los productos del albarán en una sola consulta, no una por línea
+    private Map<UUID, Product> findProducts(List<ReceiveGoodsCommand.Line> lines) {
+        for (ReceiveGoodsCommand.Line line : lines) {
+            if (line == null) throw new DomainValidationException("Receipt line cannot be null");
+            if (line.productId() == null) throw new DomainValidationException("Product cannot be null");
+        }
+        Set<UUID> productIds = lines.stream()
+                .map(ReceiveGoodsCommand.Line::productId)
+                .collect(Collectors.toSet());
+        return productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+    }
+
+    private NewReceiptLine toNewLine(ReceiveGoodsCommand.Line line, Map<UUID, Product> products) {
+        Product product = products.get(line.productId());
+        if (product == null) throw new ProductNotFoundException(line.productId());
         Money amount = line.amount() == null ? null : Money.of(line.amount());
         return new NewReceiptLine(product, Quantity.of(line.quantity(), line.unit()), amount,
                 line.expirationDate(), line.lotCode());

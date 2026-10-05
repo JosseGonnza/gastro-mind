@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, createProduct, listProducts, type Product } from '../src/lib/api';
+import {
+  ApiError,
+  createProduct,
+  createSupplier,
+  getStock,
+  listProducts,
+  listSuppliers,
+  registerGoodsReceipt,
+  type Product,
+} from '../src/lib/api';
 
 const API = 'http://api.test';
 
@@ -55,5 +64,48 @@ describe('El cliente de la API debería', () => {
 
     await expect(request).rejects.toThrow(ApiError);
     await expect(request).rejects.toMatchObject({ status: 400, message: 'Product name cannot be empty' });
+  });
+
+  it('listar los proveedores', async () => {
+    const supplier = { id: 's-1', name: 'Pescados Cimadevilla', taxId: null, phone: null, email: null };
+    const fetchMock = respondWith(200, [supplier]);
+
+    const suppliers = await listSuppliers(API);
+
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/suppliers`);
+    expect(suppliers).toEqual([supplier]);
+  });
+
+  it('crear un proveedor y avisar con el detalle si la API lo rechaza', async () => {
+    respondWith(400, { status: 400, detail: 'Supplier name cannot be empty' });
+
+    const request = createSupplier(API, { name: ' ' });
+
+    await expect(request).rejects.toMatchObject({ status: 400, message: 'Supplier name cannot be empty' });
+  });
+
+  it('registrar un albarán enviando sus líneas', async () => {
+    const fetchMock = respondWith(201, { id: 'r-1', total: 105 });
+    const receipt = {
+      supplierId: 's-1',
+      deliveryNoteNumber: 'ALB-1234',
+      lines: [{ productId: 'p-1', quantity: 2.5, unit: 'KILOGRAM' as const, amount: 37.5, expirationDate: '2026-10-09' }],
+    };
+
+    const created = await registerGoodsReceipt(API, receipt);
+
+    expect(created).toMatchObject({ id: 'r-1', total: 105 });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${API}/goods-receipts`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual(receipt);
+  });
+
+  it('consultar el stock', async () => {
+    const stock = [{ productId: 'p-1', name: 'Merluza', category: 'FISH', unit: 'KILOGRAM', allergens: ['FISH'], total: 3.5, batches: [] }];
+    const fetchMock = respondWith(200, stock);
+
+    expect(await getStock(API)).toEqual(stock);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/stock`);
   });
 });

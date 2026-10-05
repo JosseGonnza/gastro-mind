@@ -1,10 +1,9 @@
 ---
 import { API_URL } from 'astro:env/server';
 import Layout from '../layouts/Layout.astro';
-import ProductCard from '../components/ProductCard.astro';
 import AllergenIcon from '../components/AllergenIcon.astro';
 import { listProducts, type Product } from '../lib/api';
-import { ALLERGENS, ALLERGEN_LABELS } from '../lib/catalog';
+import { ALLERGENS, ALLERGEN_LABELS, CATEGORY_STYLES, UNIT_LABELS } from '../lib/catalog';
 import { describeExcluded, filterProducts, parseExcluded, toggleHref } from '../lib/filter';
 
 let products: Product[] = [];
@@ -20,116 +19,121 @@ const excluded = parseExcluded(Astro.url.searchParams);
 const visible = filterProducts(products, excluded);
 const filtering = excluded.length > 0;
 const plural = (count: number) => (count === 1 ? 'producto' : 'productos');
+const subtitle = apiDown
+  ? 'Sin conexión con la API'
+  : filtering
+    ? `${visible.length} de ${products.length} ${plural(products.length)}`
+    : `${products.length} ${plural(products.length)}`;
 ---
 
-<Layout title="Catálogo">
-  <section class="flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-extrabold tracking-tight text-stone-900">Catálogo de productos</h1>
-      <p class="mt-1 text-stone-500">
-        {
-          apiDown
-            ? 'Sin conexión con la API'
-            : filtering
-              ? `${visible.length} de ${products.length} ${plural(products.length)}`
-              : `${products.length} ${plural(products.length)}`
-        }
-      </p>
-    </div>
-    <a
-      href="/productos/nuevo"
-      class="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
-    >
-      + Nuevo producto
-    </a>
-  </section>
+<Layout title="Productos" subtitle={subtitle}>
+  <a slot="actions" href="/productos/nuevo" class="btn-primary">+ Nuevo producto</a>
 
-  {
-    created && (
-      <p class="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
-        «{created}» añadido al catálogo.
-      </p>
-    )
-  }
-
-  {
-    !apiDown && (
-      <section class="mt-8 rounded-2xl bg-white/70 p-5 ring-1 ring-stone-200/70">
-        <div class="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 class="font-bold text-stone-900">Filtrar por alérgenos</h2>
-            <p class="text-sm text-stone-500">Toca los que hay que evitar y verás solo los productos que no los llevan.</p>
-          </div>
-          {filtering && (
-            <a href="/" class="text-sm font-semibold text-brasa-oscura hover:underline">
-              Quitar filtros
-            </a>
-          )}
-        </div>
-        <ul class="mt-4 flex flex-wrap gap-2">
-          {ALLERGENS.map((allergen) => {
-            const active = excluded.includes(allergen);
-            return (
-              <li>
-                <a
-                  href={toggleHref(excluded, allergen)}
-                  class:list={[
-                    'flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-2 text-sm font-medium transition',
-                    active
-                      ? 'bg-orange-50 text-stone-900 ring-2 ring-brasa'
-                      : 'bg-white text-stone-600 ring-1 ring-stone-200 hover:ring-stone-300',
-                  ]}
-                >
-                  <AllergenIcon allergen={allergen} size={22} />
-                  {ALLERGEN_LABELS[allergen]}
-                  {active && (
-                    <span aria-hidden="true" class="font-bold text-brasa-oscura">
-                      ✕
-                    </span>
-                  )}
-                  <span class="sr-only">{active ? '(evitado; pulsa para quitarlo)' : '(pulsa para evitarlo)'}</span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    )
-  }
-
-  {
-    filtering && !apiDown && (
-      <p class="mt-6 rounded-xl bg-orange-50 px-4 py-3 text-sm text-stone-800 ring-1 ring-orange-200">
-        <strong>Apto sin {describeExcluded(excluded)}:</strong> {visible.length} de {products.length}{' '}
-        {plural(products.length)}.
-      </p>
-    )
-  }
+  {created && <p class="notice-success mb-6">«{created}» añadido al catálogo.</p>}
 
   {
     apiDown ? (
-      <div class="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-red-200">
-        <p class="text-lg font-bold text-red-700">No se puede conectar con la API</p>
-        <p class="mt-2 text-sm text-stone-500">
+      <div class="panel p-8 text-center">
+        <p class="font-semibold text-red-700">No se puede conectar con la API</p>
+        <p class="mt-1 text-sm text-stone-500">
           Comprueba que el backend está arrancado en <code class="rounded bg-stone-100 px-1.5">{API_URL}</code>.
         </p>
       </div>
-    ) : products.length === 0 ? (
-      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
-        <p class="text-lg font-bold text-stone-700">El catálogo está vacío</p>
-        <p class="mt-2 text-sm text-stone-500">Empieza dando de alta tu primer producto.</p>
-      </div>
-    ) : visible.length === 0 ? (
-      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
-        <p class="text-lg font-bold text-stone-700">Ningún producto está libre de {describeExcluded(excluded)}</p>
-        <p class="mt-2 text-sm text-stone-500">Quita algún alérgeno del filtro para ver más productos.</p>
-      </div>
     ) : (
-      <section class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((product) => (
-          <ProductCard product={product} />
-        ))}
-      </section>
+      <div class="panel overflow-hidden">
+        <div class="border-b border-stone-200 px-4 py-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs font-semibold tracking-wide text-stone-500 uppercase">Sin alérgenos</p>
+            {filtering && (
+              <a href="/" class="text-xs font-semibold text-brasa-oscura hover:underline">
+                Quitar filtros
+              </a>
+            )}
+          </div>
+          <ul class="mt-2 flex flex-wrap gap-1.5">
+            {ALLERGENS.map((allergen) => {
+              const active = excluded.includes(allergen);
+              return (
+                <li>
+                  <a
+                    href={toggleHref(excluded, allergen)}
+                    class:list={[
+                      'flex items-center gap-1.5 rounded-md py-1 pr-2.5 pl-1.5 text-xs font-medium transition',
+                      active
+                        ? 'bg-orange-50 text-stone-900 ring-1 ring-brasa'
+                        : 'bg-white text-stone-600 ring-1 ring-stone-200 hover:ring-stone-300',
+                    ]}
+                  >
+                    <AllergenIcon allergen={allergen} size={16} />
+                    {ALLERGEN_LABELS[allergen]}
+                    {active && (
+                      <span aria-hidden="true" class="font-bold text-brasa-oscura">
+                        ✕
+                      </span>
+                    )}
+                    <span class="sr-only">{active ? '(evitado; pulsa para quitarlo)' : '(pulsa para evitarlo)'}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+          {filtering && (
+            <p class="mt-3 text-sm text-stone-700">
+              <strong>Apto sin {describeExcluded(excluded)}:</strong> {visible.length} de {products.length} {plural(products.length)}.
+            </p>
+          )}
+        </div>
+
+        {products.length === 0 ? (
+          <p class="p-10 text-center text-sm text-stone-500">El catálogo está vacío: da de alta tu primer producto.</p>
+        ) : visible.length === 0 ? (
+          <p class="p-10 text-center text-sm text-stone-500">Ningún producto está libre de {describeExcluded(excluded)}.</p>
+        ) : (
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Unidad</th>
+                  <th>Alérgenos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((product) => {
+                  const style = CATEGORY_STYLES[product.category];
+                  return (
+                    <tr class="hover:bg-stone-50">
+                      <td>
+                        <p class="font-semibold text-stone-900">{product.name}</p>
+                        {product.description && <p class="text-xs text-stone-500">{product.description}</p>}
+                      </td>
+                      <td class="whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 text-stone-600">
+                          <span class:list={['size-2 rounded-full', style.band]} />
+                          {style.label}
+                        </span>
+                      </td>
+                      <td class="text-stone-600">{UNIT_LABELS[product.unit]}</td>
+                      <td>
+                        {product.allergens.length > 0 ? (
+                          <span class="flex gap-1">
+                            {product.allergens.map((allergen) => (
+                              <AllergenIcon allergen={allergen} size={20} />
+                            ))}
+                          </span>
+                        ) : (
+                          <span class="text-xs text-stone-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     )
   }
 </Layout>

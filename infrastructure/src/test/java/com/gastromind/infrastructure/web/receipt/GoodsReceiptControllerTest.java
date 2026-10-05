@@ -121,6 +121,27 @@ class GoodsReceiptControllerTest {
     }
 
     @Test
+    @DisplayName("listar los albaranes con su proveedor, sus líneas y su total, filtrando por proveedor y fechas")
+    void shouldListReceiptsFilteredBySupplierAndDates() throws Exception {
+        Supplier otherSupplier = Supplier.create("Mariscos El Muelle", null, null, null);
+        supplierRepository.save(otherSupplier);
+        register(receiptJson(supplier.getId(), "ALB-1234")).andExpect(status().isCreated());
+        register(receiptJson(otherSupplier.getId(), "F-77")).andExpect(status().isCreated());
+
+        mockMvc.perform(get("/goods-receipts").param("supplierId", supplier.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].supplierName").value("Pescados Cimadevilla"))
+                .andExpect(jsonPath("$[0].deliveryNoteNumber").value("ALB-1234"))
+                .andExpect(jsonPath("$[0].receivedOn").value(LocalDate.now().toString()))
+                .andExpect(jsonPath("$[0].lineCount").value(2))
+                .andExpect(jsonPath("$[0].total").value(105.0));
+        mockMvc.perform(get("/goods-receipts").param("from", LocalDate.now().plusDays(1).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     @DisplayName("responder 404 si el albarán no existe")
     void shouldReturnNotFoundWhenReceiptDoesNotExist() throws Exception {
         UUID unknownId = UUID.randomUUID();

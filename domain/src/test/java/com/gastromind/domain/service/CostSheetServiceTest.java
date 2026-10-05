@@ -104,6 +104,44 @@ class CostSheetServiceTest {
     }
 
     @Test
+    @DisplayName("quitar el IVA al precio de la carta y dar el food cost y el margen por ración")
+    void shouldCalculateFoodCostAndMarginFromSalePrice() {
+        CostSheet sheet = costSheetService.calculate(grilledHake(), List.of(hake, potato, oil), lastPurchases);
+
+        assertThat(sheet.salePrice()).isEqualTo(Money.of(16.5));
+        assertThat(sheet.salePriceWithoutVat()).isEqualTo(Money.of(15.0));
+        assertThat(sheet.foodCostPercentage()).isEqualByComparingTo("33.6");
+        assertThat(sheet.margin()).isEqualByComparingTo("9.96");
+    }
+
+    @Test
+    @DisplayName("dar un margen negativo si el plato cuesta más de lo que se cobra")
+    void shouldGiveNegativeMarginWhenDishCostsMoreThanItsPrice() {
+        Recipe recipe = Recipe.create("Merluza regalada", null, 1, Money.of(5.5));
+        recipe.addIngredient(RecipeIngredient.of(hake, Quantity.of(210, UnitOfMeasure.GRAM), new BigDecimal("50")));
+
+        CostSheet sheet = costSheetService.calculate(recipe, List.of(hake), lastPurchases);
+
+        assertThat(sheet.costPerPortion()).isEqualTo(Money.of(5.04));
+        assertThat(sheet.margin()).isEqualByComparingTo("-0.04");
+        assertThat(sheet.foodCostPercentage()).isEqualByComparingTo("100.8");
+    }
+
+    @Test
+    @DisplayName("dejar sin precio sin IVA, sin food cost y sin margen una receta que no tiene precio")
+    void shouldLeaveSaleFiguresEmptyWithoutSalePrice() {
+        Recipe recipe = Recipe.create("Merluza sin precio", null, 1, null);
+        recipe.addIngredient(RecipeIngredient.of(hake, Quantity.of(200, UnitOfMeasure.GRAM)));
+
+        CostSheet sheet = costSheetService.calculate(recipe, List.of(hake), lastPurchases);
+
+        assertThat(sheet.salePrice()).isNull();
+        assertThat(sheet.salePriceWithoutVat()).isNull();
+        assertThat(sheet.foodCostPercentage()).isNull();
+        assertThat(sheet.margin()).isNull();
+    }
+
+    @Test
     @DisplayName("lanzar excepción si falta el producto de algún ingrediente")
     void shouldThrowExceptionWhenAProductIsMissing() {
         assertThatThrownBy(() -> costSheetService.calculate(grilledHake(), List.of(hake, potato), lastPurchases))

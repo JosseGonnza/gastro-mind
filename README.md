@@ -120,6 +120,7 @@ y el albarán sigue diciendo 5 kg, como la factura del proveedor.
 | `GET` | `/suppliers` | Lista los proveedores por nombre | **200** |
 | `GET` | `/suppliers/{id}` | Consulta un proveedor | **200**, o **404** si no existe |
 | `POST` | `/goods-receipts` | Registra un albarán y crea sus lotes | **201**, **400** si no es válido, **404** si falta el proveedor o un producto, **409** si el número está repetido |
+| `GET` | `/goods-receipts?supplierId=&from=&to=` | Lista los albaranes con su proveedor, sus líneas y su total, del más reciente al más antiguo; los filtros son opcionales y las fechas incluyen los extremos | **200**, o **400** si `from` es posterior a `to` |
 | `GET` | `/goods-receipts/{id}` | Consulta un albarán con su total y sus líneas | **200**, o **404** si no existe |
 | `GET` | `/stock` | Qué hay de cada producto: total y lotes por caducidad | **200** |
 

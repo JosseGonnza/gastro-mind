@@ -3,7 +3,8 @@
 
 # 🍳 Gastro Mind
 
-> ERP modular para hostelería: **productos, lotes, stock y escandallos**.
+> ERP modular para hostelería: **productos, proveedores, albaranes, lotes, stock y
+> escandallos**.
 > Responde a tres preguntas de cualquier cocina: qué hay en cámara, qué hay
 > que gastar primero y cuánto cuesta de verdad cada plato.
 
@@ -17,8 +18,9 @@ Gastro Mind calcula el coste con lo que costó de verdad cada lote que se gasta,
 y gasta primero lo que caduca antes, como en una cámara bien llevada.
 
 Está en desarrollo y crece por funcionalidades completas: cada una atraviesa
-dominio, casos de uso, API y base de datos antes de empezar la siguiente. La
-primera, el **catálogo de productos**, ya funciona de punta a punta, con su web.
+dominio, casos de uso, API y base de datos antes de empezar la siguiente. Ya
+funcionan de punta a punta, con su web, el **catálogo de productos** y la
+**recepción de género**: proveedores, albaranes y lo que hay en cámara.
 
 ## Cómo calcula
 
@@ -53,17 +55,38 @@ de ese arroz es **24 €**, no un precio medio.
   comestibles), unidad de medida (kg, g, L, ml, ud, manojo y ración) y los
   **14 alérgenos** de declaración obligatoria. Se guardan en PostgreSQL y se
   gestionan por API.
-- **📦 Lotes** — cada entrada de género con su SKU, su caducidad, su precio de
-  compra y su coste unitario.
-- **🧊 Stock** — cantidad disponible por producto, sumando sus lotes, y
-  consumo FEFO.
+- **🚚 Proveedores** — nombre, CIF, teléfono y email (solo el nombre es
+  obligatorio).
+- **🧾 Albaranes** — cada entrega de un proveedor: número de albarán y líneas
+  con producto, cantidad, importe, caducidad y lote. Registrarlo crea un lote
+  por línea.
+- **📦 Lotes** — cada entrada de género con su código de lote, su caducidad, su
+  precio de compra y lo que queda de él.
+- **🧊 Stock** — qué hay de cada producto, en qué lotes y cuándo caduca cada
+  uno, y consumo FEFO.
 - **📖 Recetas** — ingredientes sin productos repetidos, pasos, raciones,
   tiempo y dificultad.
 - **💶 Escandallo** — coste de un ingrediente según los lotes que consume y
   coste total de una receta.
 
-Lotes, stock, recetas y escandallo viven por ahora solo en el dominio: llegarán
-a la API en las próximas funcionalidades.
+Recetas y escandallo viven por ahora solo en el dominio: llegarán a la API en
+las próximas funcionalidades.
+
+## Cómo entra el género
+
+El **albarán es un documento**: dice lo que entró y no cambia. El **lote es el
+stock**: se va gastando. Por eso cada línea del albarán crea un lote y guarda
+una foto de lo que llegó; si mañana se gastan 2 de los 5 kg, el lote baja a 3 kg
+y el albarán sigue diciendo 5 kg, como la factura del proveedor.
+
+- Las reglas del lote valen también al recibir: nada caducado, cantidad mayor
+  que cero y unidad compatible con la del producto (3000 g de merluza entran
+  como 3 kg).
+- Si el proveedor no da código de lote, se usa el número de albarán y la línea:
+  `ALB-1234-2`.
+- Un proveedor no puede repetir número de albarán (**409**). Otro proveedor sí.
+- El albarán y todos sus lotes se guardan en **una sola transacción**: si falla
+  una línea, no queda nada a medias.
 
 ## La web
 
@@ -76,6 +99,13 @@ a la API en las próximas funcionalidades.
 - **➕ Nuevo producto** — formulario con los 14 alérgenos como fichas que se
   marcan con un toque. Si la API rechaza el producto, el formulario lo dice y
   conserva lo escrito.
+- **🧾 Nuevo albarán** — proveedor, número y tantas líneas como hagan falta. Los
+  decimales se escriben con coma (*2,5 kg*, *37,50 €*) y los errores de cada
+  línea se explican en español.
+- **🧊 Qué hay en cámara** — cada producto con su total y sus lotes, primero los
+  que caducan antes, con un aviso de color: caducado, hoy o mañana en rojo,
+  menos de cinco días en ámbar.
+- **🚚 Proveedores** — listado y alta.
 - Funciona sin JavaScript en el navegador: las páginas se generan en el
   servidor y los formularios son HTML de toda la vida.
 
@@ -86,6 +116,12 @@ a la API en las próximas funcionalidades.
 | `POST` | `/products` | Crea un producto | **201** con su `Location`, o **400** si no es válido |
 | `GET` | `/products` | Lista los productos por nombre | **200** |
 | `GET` | `/products/{id}` | Consulta un producto | **200**, o **404** si no existe |
+| `POST` | `/suppliers` | Crea un proveedor | **201** con su `Location`, o **400** si no es válido |
+| `GET` | `/suppliers` | Lista los proveedores por nombre | **200** |
+| `GET` | `/suppliers/{id}` | Consulta un proveedor | **200**, o **404** si no existe |
+| `POST` | `/goods-receipts` | Registra un albarán y crea sus lotes | **201**, **400** si no es válido, **404** si falta el proveedor o un producto, **409** si el número está repetido |
+| `GET` | `/goods-receipts/{id}` | Consulta un albarán con su total y sus líneas | **200**, o **404** si no existe |
+| `GET` | `/stock` | Qué hay de cada producto: total y lotes por caducidad | **200** |
 
 - Los errores siguen el estándar **Problem Details** (RFC 9457):
   `application/problem+json` con `status`, `title` y `detail`.
@@ -96,12 +132,14 @@ a la API en las próximas funcionalidades.
 
 - **Java 21 + Maven multimódulo** → arquitectura hexagonal en tres módulos:
   - `domain` — entidades, value objects y servicios de dominio, sin frameworks.
-  - `application` — casos de uso (`CreateProduct`, `GetProduct`,
-    `ListProducts`) y el puerto `ProductRepository`. Java puro, sin Spring.
+  - `application` — casos de uso (`CreateProduct`, `ReceiveGoods`, `GetStock`…)
+    y los puertos que necesitan (los repositorios). Java puro, sin Spring.
   - `infrastructure` — Spring Boot 4: la API REST y el adaptador de
     persistencia.
 - **SQL escrito a mano con JDBC puro**: `Connection`, `PreparedStatement` y
-  `ResultSet`, con transacciones explícitas y sin ORM.
+  `ResultSet`, con transacciones explícitas y sin ORM. La base de datos repite
+  las reglas importantes como red de seguridad: claves foráneas, `UNIQUE` por
+  proveedor y número de albarán, y `CHECK` en las cantidades.
 - **PostgreSQL 16** con migraciones **Flyway** versionadas en
   `infrastructure/src/main/resources/db/migration`.
 - **`frontend/`: Astro 5 + Tailwind 4 + TypeScript** con renderizado en
@@ -112,11 +150,12 @@ a la API en las próximas funcionalidades.
   sésamo, que no existen en ningún set libre.
 - **TDD de principio a fin**: cada regla nace de un test en rojo, y el
   historial de commits lo cuenta.
-- **132 tests en el backend** (JUnit 6 + AssertJ): unitarios en el dominio y
+- **192 tests en el backend** (JUnit 6 + AssertJ): unitarios en el dominio y
   los casos de uso, y de integración contra un **PostgreSQL real** gracias a
   **Testcontainers**. Los nombres en español se leen como reglas del negocio:
   *«CostingService debería calcular el coste con múltiples lotes»*. En el
-  front, **Vitest** prueba el cliente de la API y el filtro de alérgenos.
+  front, **26 tests de Vitest**: el cliente de la API, el filtro de alérgenos,
+  las caducidades, los formatos en español y el formulario de albarán.
 - **Integración continua** con GitHub Actions: cada push a `main` pasa los
   tests del backend y los tests, tipos y compilación del front.
 
@@ -129,7 +168,7 @@ docker compose up -d                                          # PostgreSQL
 mvn verify                                                    # tests (necesita Docker)
 mvn -DskipTests package                                       # construir
 java -jar infrastructure/target/infrastructure-0.0.1-SNAPSHOT.jar   # API en :8080
-./scripts/datos-ejemplo.sh                                    # productos de ejemplo
+./scripts/datos-ejemplo.sh                                    # productos, proveedores y albaranes
 ```
 
 Y en otra terminal, la web:
@@ -152,12 +191,16 @@ curl -i -X POST localhost:8080/products \
   -d '{"name": "Pan de semillas", "category": "BAKERY", "unit": "UNIT", "allergens": ["GLUTEN", "SESAME"]}'
 
 curl localhost:8080/products
+curl localhost:8080/stock
 ```
 
 ## Lo que viene
 
 - [x] **Catálogo de productos**: dominio, casos de uso, API y PostgreSQL.
-- [ ] **Recepción de género**: albaranes de entrada que generan lotes.
+- [x] **Recepción de género**: proveedores, albaranes que generan lotes y
+  consulta del stock.
+- [ ] **Web de gestión**: navegación por módulos, tablas, listado y detalle de
+  albaranes, y filtros por producto.
 - [ ] **Recetas y escandallo** por API, con coste por ración.
 - [ ] **Producción**: cocinar una receta gasta sus ingredientes por FEFO.
 - [ ] Mermas e inventario.
@@ -166,6 +209,8 @@ curl localhost:8080/products
 
 - Las categorías ya separan bebidas y alcohol pensando en un futuro TPV.
 - Una migración ya aplicada no se toca nunca: los cambios van en una nueva.
+- El script de datos de ejemplo usa el `date` de GNU (Linux) para calcular las
+  caducidades.
 - La web solo acepta formularios de los dominios de `security.allowedDomains`
   (`frontend/astro.config.mjs`). Al desplegarla, hay que añadir el dominio real.
 

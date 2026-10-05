@@ -1,0 +1,143 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import ChevronRight from '../../assets/icons/chevron-right.svg';
+import { ApiError, listGoodsReceipts, listSuppliers, type GoodsReceiptSummary, type Supplier } from '../../lib/api';
+import { formatDate, formatMoney } from '../../lib/format';
+
+const params = Astro.url.searchParams;
+const supplierId = params.get('proveedor') ?? '';
+const from = params.get('desde') ?? '';
+const to = params.get('hasta') ?? '';
+const filtering = Boolean(supplierId || from || to);
+
+let suppliers: Supplier[] = [];
+let receipts: GoodsReceiptSummary[] = [];
+let apiDown = false;
+let error = from && to && from > to ? 'La fecha «desde» no puede ser posterior a «hasta».' : '';
+
+try {
+  [suppliers, receipts] = await Promise.all([
+    listSuppliers(API_URL),
+    error ? Promise.resolve([]) : listGoodsReceipts(API_URL, { supplierId, from, to }),
+  ]);
+} catch (e) {
+  if (e instanceof ApiError) {
+    error = `La API ha rechazado el filtro: ${e.message}`;
+  } else {
+    apiDown = true;
+  }
+}
+
+const total = receipts.reduce((sum, receipt) => sum + receipt.total, 0);
+const plural = (count: number) => (count === 1 ? 'albarán' : 'albaranes');
+---
+
+<Layout title="Albaranes" subtitle="Todo el género que ha entrado, por proveedor y fecha">
+  <a slot="actions" href="/albaranes/nuevo" class="btn-primary">+ Nuevo albarán</a>
+
+  {
+    apiDown ? (
+      <div class="panel p-8 text-center">
+        <p class="font-semibold text-red-700">No se puede conectar con la API</p>
+        <p class="mt-1 text-sm text-stone-500">
+          Comprueba que el backend está arrancado en <code class="rounded bg-stone-100 px-1.5">{API_URL}</code>.
+        </p>
+      </div>
+    ) : (
+      <div class="panel overflow-hidden">
+        <form method="get" class="flex flex-wrap items-end gap-3 border-b border-stone-200 px-4 py-3">
+          <label class="block w-full sm:w-56">
+            <span class="field-label">Proveedor</span>
+            <select name="proveedor" class="field">
+              <option value="">Todos</option>
+              {suppliers.map((supplier) => (
+                <option value={supplier.id} selected={supplier.id === supplierId}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label class="block">
+            <span class="field-label">Desde</span>
+            <input type="date" name="desde" value={from} class="field" />
+          </label>
+          <label class="block">
+            <span class="field-label">Hasta</span>
+            <input type="date" name="hasta" value={to} class="field" />
+          </label>
+          <button type="submit" class="btn-secondary">Filtrar</button>
+          {filtering && (
+            <a href="/albaranes" class="py-2 text-xs font-semibold text-brasa-oscura hover:underline">
+              Quitar filtros
+            </a>
+          )}
+        </form>
+
+        {error ? (
+          <p class="notice-error m-4">{error}</p>
+        ) : receipts.length === 0 ? (
+          <p class="p-10 text-center text-sm text-stone-500">
+            {filtering ? (
+              'Ningún albarán con estos filtros.'
+            ) : (
+              <>
+                Todavía no hay albaranes.{' '}
+                <a href="/albaranes/nuevo" class="font-semibold text-brasa-oscura hover:underline">
+                  Registra el primero
+                </a>
+                .
+              </>
+            )}
+          </p>
+        ) : (
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Albarán</th>
+                  <th>Proveedor</th>
+                  <th class="num">Líneas</th>
+                  <th class="num">Total</th>
+                  <th>
+                    <span class="sr-only">Ver</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {receipts.map((receipt) => (
+                  <tr class="hover:bg-stone-50">
+                    <td class="whitespace-nowrap text-stone-600">{formatDate(receipt.receivedOn)}</td>
+                    <td>
+                      <a href={`/albaranes/${receipt.id}`} class="font-mono font-semibold text-stone-900 hover:underline">
+                        {receipt.deliveryNoteNumber}
+                      </a>
+                    </td>
+                    <td class="text-stone-700">{receipt.supplierName}</td>
+                    <td class="num text-stone-600">{receipt.lineCount}</td>
+                    <td class="num font-semibold text-stone-900">{formatMoney(receipt.total)}</td>
+                    <td class="w-8 pr-3">
+                      <a href={`/albaranes/${receipt.id}`} aria-label={`Ver el albarán ${receipt.deliveryNoteNumber}`}>
+                        <ChevronRight class="size-4 text-stone-400" aria-hidden="true" />
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr class="border-t border-stone-200 bg-stone-50 text-sm">
+                  <td colspan="4" class="px-4 py-2.5 text-stone-500">
+                    {receipts.length} {plural(receipts.length)}
+                  </td>
+                  <td class="num px-4 py-2.5 font-bold text-stone-900">{formatMoney(total)}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    )
+  }
+</Layout>

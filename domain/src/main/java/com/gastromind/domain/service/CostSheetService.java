@@ -26,17 +26,25 @@ public class CostSheetService {
                 .collect(Collectors.toMap(Product::getId, Function.identity(), (first, duplicate) -> first));
         List<CostSheetLine> lines = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
+        boolean complete = true;
         for (RecipeIngredient ingredient : recipe.getIngredients()) {
             Product product = productsById.get(ingredient.productId());
             if (product == null) {
                 throw new DomainValidationException("Missing product for ingredient " + ingredient.productId());
             }
-            BigDecimal cost = lastPurchases.get(product.getId()).costOf(ingredient.grossQuantity());
-            total = total.add(cost);
+            PurchasePrice lastPurchase = lastPurchases.get(product.getId());
+            Money cost = null;
+            if (lastPurchase == null) {
+                complete = false;
+            } else {
+                BigDecimal exactCost = lastPurchase.costOf(ingredient.grossQuantity());
+                total = total.add(exactCost);
+                cost = Money.of(exactCost);
+            }
             lines.add(new CostSheetLine(product.getId(), product.getName(), ingredient.quantity(),
-                    ingredient.yieldPercentage(), ingredient.grossQuantity(), Money.of(cost)));
+                    ingredient.yieldPercentage(), ingredient.grossQuantity(), lastPurchase, cost));
         }
         BigDecimal perPortion = total.divide(BigDecimal.valueOf(recipe.getPortions()), MathContext.DECIMAL64);
-        return new CostSheet(lines, Money.of(total), Money.of(perPortion));
+        return new CostSheet(lines, Money.of(total), Money.of(perPortion), complete);
     }
 }

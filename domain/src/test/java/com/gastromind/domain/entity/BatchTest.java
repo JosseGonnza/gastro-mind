@@ -1,5 +1,6 @@
 package com.gastromind.domain.entity;
 
+import com.gastromind.domain.exception.DomainValidationException;
 import com.gastromind.domain.valueobject.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -96,6 +97,14 @@ class BatchTest {
         assertThatThrownBy(() -> Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, Quantity.of(3, UnitOfMeasure.UNIT)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Quantity unit must be compatible with product unit");
+    }
+
+    @Test
+    @DisplayName("No aceptar un lote sin cantidad")
+    void shouldThrowExceptionWhenInitialQuantityIsZero() {
+        assertThatThrownBy(() -> Batch.create(PRODUCT, SKU, EXPIRATION_DATE, PURCHASE_PRICE, Quantity.of(0, UnitOfMeasure.KILOGRAM)))
+                .isInstanceOf(DomainValidationException.class)
+                .hasMessage("Initial quantity must be greater than zero");
     }
 
     @Test

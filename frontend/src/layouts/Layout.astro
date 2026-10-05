@@ -1,21 +1,38 @@
 ---
 import '@fontsource-variable/figtree';
 import '../styles/global.css';
+import ArchiveBox from '../assets/icons/archive-box.svg';
+import DocumentText from '../assets/icons/document-text.svg';
+import Tag from '../assets/icons/tag.svg';
+import Truck from '../assets/icons/truck.svg';
 
 interface Props {
   title: string;
+  subtitle?: string;
 }
 
-const { title } = Astro.props;
+const { title, subtitle } = Astro.props;
 const path = Astro.url.pathname;
 
-const links = [
-  { href: '/', label: 'Catálogo', section: '/productos' },
-  { href: '/stock', label: 'En cámara', section: '/stock' },
-  { href: '/albaranes/nuevo', label: 'Nuevo albarán', section: '/albaranes' },
-  { href: '/proveedores', label: 'Proveedores', section: '/proveedores' },
+const sections = [
+  {
+    name: 'Almacén',
+    links: [{ href: '/stock', label: 'En cámara', icon: ArchiveBox, prefixes: ['/stock'] }],
+  },
+  {
+    name: 'Compras',
+    links: [
+      { href: '/albaranes/nuevo', label: 'Albaranes', icon: DocumentText, prefixes: ['/albaranes'] },
+      { href: '/proveedores', label: 'Proveedores', icon: Truck, prefixes: ['/proveedores'] },
+    ],
+  },
+  {
+    name: 'Catálogo',
+    links: [{ href: '/', label: 'Productos', icon: Tag, prefixes: ['/productos'] }],
+  },
 ];
-const isActive = (href: string, section: string) => path === href || path.startsWith(section);
+
+const isActive = (href: string, prefixes: string[]) => path === href || prefixes.some((prefix) => path.startsWith(prefix));
 ---
 
 <!doctype html>
@@ -26,37 +43,66 @@ const isActive = (href: string, section: string) => path === href || path.starts
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} · Gastro Mind</title>
   </head>
-  <body class="flex min-h-dvh flex-col bg-crema font-sans text-stone-800 antialiased">
-    <header class="bg-linear-to-r from-trigo via-melocoton to-brasa shadow-sm">
-      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <a href="/" class="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-stone-900">
-          <img src="/favicon.svg" alt="" class="size-9" />
-          Gastro Mind
-        </a>
-        <nav class="flex flex-wrap gap-1 text-sm font-semibold">
-          {
-            links.map(({ href, label, section }) => (
-              <a
-                href={href}
-                class:list={[
-                  'rounded-full px-4 py-2 transition',
-                  isActive(href, section) ? 'bg-white/80 text-stone-900 shadow-sm' : 'text-stone-800 hover:bg-white/40',
-                ]}
-              >
-                {label}
-              </a>
-            ))
-          }
-        </nav>
-      </div>
-    </header>
+  <body class="min-h-dvh bg-stone-100 font-sans text-stone-800 antialiased">
+    <aside class="border-b border-stone-200 bg-white lg:fixed lg:inset-y-0 lg:w-60 lg:border-r lg:border-b-0">
+      <a href="/stock" class="flex items-center gap-3 px-5 py-4 lg:py-5">
+        <span class="grid size-9 place-items-center rounded-lg bg-linear-to-br from-trigo via-melocoton to-brasa">
+          <img src="/favicon.svg" alt="" class="size-6" />
+        </span>
+        <span>
+          <span class="block leading-tight font-extrabold tracking-tight text-stone-900">Gastro Mind</span>
+          <span class="block text-xs text-stone-500">Gestión de cocina</span>
+        </span>
+      </a>
+      <nav class="flex gap-6 overflow-x-auto px-3 pb-3 lg:block lg:space-y-5 lg:overflow-visible lg:pt-2">
+        {
+          sections.map((section) => (
+            <div class="shrink-0">
+              <p class="px-2.5 pb-1 text-[11px] font-semibold tracking-wider text-stone-400 uppercase">{section.name}</p>
+              <ul class="flex gap-1 lg:block lg:space-y-0.5">
+                {section.links.map(({ href, label, icon: Icon, prefixes }) => {
+                  const active = isActive(href, prefixes);
+                  return (
+                    <li>
+                      <a
+                        href={href}
+                        aria-current={active ? 'page' : undefined}
+                        class:list={[
+                          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap transition',
+                          active
+                            ? 'bg-orange-50 text-stone-900 ring-1 ring-orange-200'
+                            : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                        ]}
+                      >
+                        <Icon class={active ? 'size-5 text-brasa-oscura' : 'size-5 text-stone-400'} aria-hidden="true" />
+                        {label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))
+        }
+      </nav>
+    </aside>
 
-    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <slot />
-    </main>
-
-    <footer class="border-t border-stone-200/70 py-6 text-center text-xs text-stone-500">
-      Gastro Mind · ERP de hostelería · Iconos de alérgenos basados en Fluent Emoji (Microsoft, MIT)
-    </footer>
+    <div class="flex min-h-dvh flex-col lg:pl-60">
+      <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8 lg:py-8">
+        <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-stone-900">{title}</h1>
+            {subtitle && <p class="mt-1 text-sm text-stone-500">{subtitle}</p>}
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <slot name="actions" />
+          </div>
+        </header>
+        <slot />
+      </main>
+      <footer class="px-4 py-5 text-xs text-stone-400 sm:px-8">
+        Gastro Mind · Iconos de alérgenos basados en Fluent Emoji (Microsoft, MIT) · Iconos de interfaz de Heroicons (MIT)
+      </footer>
+    </div>
   </body>
 </html>

@@ -10,9 +10,12 @@ const { title } = Astro.props;
 const path = Astro.url.pathname;
 
 const links = [
-  { href: '/', label: 'Catálogo' },
-  { href: '/productos/nuevo', label: 'Nuevo producto' },
+  { href: '/', label: 'Catálogo', section: '/productos' },
+  { href: '/stock', label: 'En cámara', section: '/stock' },
+  { href: '/albaranes/nuevo', label: 'Nuevo albarán', section: '/albaranes' },
+  { href: '/proveedores', label: 'Proveedores', section: '/proveedores' },
 ];
+const isActive = (href: string, section: string) => path === href || path.startsWith(section);
 ---
 
 <!doctype html>
@@ -30,14 +33,14 @@ const links = [
           <img src="/favicon.svg" alt="" class="size-9" />
           Gastro Mind
         </a>
-        <nav class="flex gap-1 text-sm font-semibold">
+        <nav class="flex flex-wrap gap-1 text-sm font-semibold">
           {
-            links.map(({ href, label }) => (
+            links.map(({ href, label, section }) => (
               <a
                 href={href}
                 class:list={[
                   'rounded-full px-4 py-2 transition',
-                  path === href ? 'bg-white/80 text-stone-900 shadow-sm' : 'text-stone-800 hover:bg-white/40',
+                  isActive(href, section) ? 'bg-white/80 text-stone-900 shadow-sm' : 'text-stone-800 hover:bg-white/40',
                 ]}
               >
                 {label}

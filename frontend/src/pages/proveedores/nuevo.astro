@@ -1,0 +1,73 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import { ApiError, createSupplier } from '../../lib/api';
+
+let error: string | null = null;
+let values = { name: '', taxId: '', phone: '', email: '' };
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  values = {
+    name: String(form.get('name') ?? ''),
+    taxId: String(form.get('taxId') ?? ''),
+    phone: String(form.get('phone') ?? ''),
+    email: String(form.get('email') ?? ''),
+  };
+  try {
+    const supplier = await createSupplier(API_URL, {
+      name: values.name,
+      taxId: values.taxId || undefined,
+      phone: values.phone || undefined,
+      email: values.email || undefined,
+    });
+    return Astro.redirect(`/proveedores?creado=${encodeURIComponent(supplier.name)}`);
+  } catch (e) {
+    error =
+      e instanceof ApiError
+        ? `La API ha rechazado el proveedor: ${e.message}`
+        : 'No se puede conectar con la API. ¿Está arrancada?';
+  }
+}
+
+const field =
+  'mt-1.5 w-full rounded-xl border-0 bg-white px-4 py-2.5 text-stone-900 shadow-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brasa focus:outline-none';
+---
+
+<Layout title="Nuevo proveedor">
+  <a href="/proveedores" class="text-sm font-semibold text-stone-500 hover:text-stone-800">← Volver a proveedores</a>
+  <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-stone-900">Nuevo proveedor</h1>
+
+  {
+    error && (
+      <p class="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 ring-1 ring-red-200">{error}</p>
+    )
+  }
+
+  <form method="post" class="mt-8 grid max-w-2xl gap-5 sm:grid-cols-2">
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-stone-700">Nombre</span>
+      <input name="name" required pattern=".*\S.*" maxlength="100" value={values.name} class={field} />
+    </label>
+    <label class="block">
+      <span class="text-sm font-semibold text-stone-700">CIF <span class="font-normal text-stone-400">(opcional)</span></span>
+      <input name="taxId" maxlength="20" value={values.taxId} class={field} />
+    </label>
+    <label class="block">
+      <span class="text-sm font-semibold text-stone-700">Teléfono <span class="font-normal text-stone-400">(opcional)</span></span>
+      <input name="phone" type="tel" maxlength="30" value={values.phone} class={field} />
+    </label>
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-stone-700">Email <span class="font-normal text-stone-400">(opcional)</span></span>
+      <input name="email" type="email" maxlength="100" value={values.email} class={field} />
+    </label>
+    <div class="sm:col-span-2">
+      <button
+        type="submit"
+        class="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
+      >
+        Guardar proveedor
+      </button>
+    </div>
+  </form>
+</Layout>

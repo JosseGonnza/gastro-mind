@@ -1,0 +1,93 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import { listSuppliers, type Supplier } from '../../lib/api';
+
+let suppliers: Supplier[] = [];
+let apiDown = false;
+try {
+  suppliers = await listSuppliers(API_URL);
+} catch {
+  apiDown = true;
+}
+
+const created = Astro.url.searchParams.get('creado');
+---
+
+<Layout title="Proveedores">
+  <section class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-stone-900">Proveedores</h1>
+      <p class="mt-1 text-stone-500">
+        {apiDown ? 'Sin conexión con la API' : `${suppliers.length} ${suppliers.length === 1 ? 'proveedor' : 'proveedores'}`}
+      </p>
+    </div>
+    <a
+      href="/proveedores/nuevo"
+      class="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
+    >
+      + Nuevo proveedor
+    </a>
+  </section>
+
+  {
+    created && (
+      <p class="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
+        «{created}» añadido a tus proveedores.
+      </p>
+    )
+  }
+
+  {
+    apiDown ? (
+      <div class="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-red-200">
+        <p class="text-lg font-bold text-red-700">No se puede conectar con la API</p>
+        <p class="mt-2 text-sm text-stone-500">
+          Comprueba que el backend está arrancado en <code class="rounded bg-stone-100 px-1.5">{API_URL}</code>.
+        </p>
+      </div>
+    ) : suppliers.length === 0 ? (
+      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
+        <p class="text-lg font-bold text-stone-700">Todavía no hay proveedores</p>
+        <p class="mt-2 text-sm text-stone-500">Da de alta al primero para poder registrar sus albaranes.</p>
+      </div>
+    ) : (
+      <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {suppliers.map((supplier) => (
+          <li class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200/70">
+            <p class="text-lg font-bold text-stone-900">{supplier.name}</p>
+            <dl class="mt-3 space-y-1 text-sm text-stone-600">
+              {supplier.taxId && (
+                <div class="flex gap-2">
+                  <dt class="font-semibold text-stone-500">CIF</dt>
+                  <dd>{supplier.taxId}</dd>
+                </div>
+              )}
+              {supplier.phone && (
+                <div class="flex gap-2">
+                  <dt class="font-semibold text-stone-500">Tel.</dt>
+                  <dd>
+                    <a href={`tel:${supplier.phone.replaceAll(' ', '')}`} class="hover:underline">
+                      {supplier.phone}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {supplier.email && (
+                <div class="flex gap-2">
+                  <dt class="font-semibold text-stone-500">Email</dt>
+                  <dd>
+                    <a href={`mailto:${supplier.email}`} class="hover:underline">
+                      {supplier.email}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {!supplier.taxId && !supplier.phone && !supplier.email && <p class="text-stone-400">Sin datos de contacto</p>}
+            </dl>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Layout>

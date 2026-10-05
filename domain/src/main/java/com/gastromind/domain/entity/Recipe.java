@@ -1,6 +1,7 @@
 package com.gastromind.domain.entity;
 
 import com.gastromind.domain.exception.DomainValidationException;
+import com.gastromind.domain.valueobject.Money;
 import com.gastromind.domain.valueobject.RecipeIngredient;
 
 import java.util.ArrayList;
@@ -14,19 +15,22 @@ public class Recipe {
     private final String name;
     private final String description;
     private final int portions;
+    //Con IVA, tal cual va en la carta; null mientras no tenga precio
+    private final Money salePrice;
     private final List<RecipeIngredient> ingredients;
 
-    private Recipe(UUID id, String name, String description, int portions) {
-        validateInvariants(name, portions);
+    private Recipe(UUID id, String name, String description, int portions, Money salePrice) {
+        validateInvariants(name, portions, salePrice);
         this.id = id;
         this.name = name;
         this.description = description;
         this.portions = portions;
+        this.salePrice = salePrice;
         this.ingredients = new ArrayList<>();
     }
 
-    public static Recipe create(String name, String description, int portions) {
-        return new Recipe(UUID.randomUUID(), name, description, portions);
+    public static Recipe create(String name, String description, int portions, Money salePrice) {
+        return new Recipe(UUID.randomUUID(), name, description, portions, salePrice);
     }
 
     public void addIngredient(RecipeIngredient ingredient) {
@@ -43,12 +47,15 @@ public class Recipe {
         return ingredients.stream().anyMatch(i -> i.productId().equals(ingredient.productId()));
     }
 
-    private static void validateInvariants(String name, int portions) {
+    private static void validateInvariants(String name, int portions, Money salePrice) {
         if (name == null || name.isBlank()) {
             throw new DomainValidationException("Name cannot be empty");
         }
         if (portions <= 0) {
             throw new DomainValidationException("Portions must be greater than zero");
+        }
+        if (salePrice != null && salePrice.amount().signum() == 0) {
+            throw new DomainValidationException("Sale price must be greater than zero");
         }
     }
 
@@ -66,6 +73,10 @@ public class Recipe {
 
     public int getPortions() {
         return portions;
+    }
+
+    public Money getSalePrice() {
+        return salePrice;
     }
 
     public List<RecipeIngredient> getIngredients() {

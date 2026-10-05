@@ -91,6 +91,7 @@ public class Batch {
         if (!initialQuantity.unit().isConvertibleTo(unit) || !currentQuantity.unit().isConvertibleTo(unit)) {
             throw new DomainValidationException("Quantity unit must be compatible with product unit");
         }
+        if (initialQuantity.isZero()) throw new DomainValidationException("Initial quantity must be greater than zero");
         if (!initialQuantity.hasEnough(currentQuantity)) {
             throw new DomainValidationException("Current quantity cannot exceed initial quantity");
         }

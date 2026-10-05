@@ -17,6 +17,71 @@ export interface NewProduct {
   allergens: Allergen[];
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  taxId: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface NewSupplier {
+  name: string;
+  taxId?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface NewReceiptLine {
+  productId: string;
+  quantity: number;
+  unit: Unit;
+  amount: number;
+  expirationDate: string;
+  lotCode?: string;
+}
+
+export interface NewGoodsReceipt {
+  supplierId: string;
+  deliveryNoteNumber: string;
+  lines: NewReceiptLine[];
+}
+
+export interface GoodsReceipt {
+  id: string;
+  supplierId: string;
+  deliveryNoteNumber: string;
+  receivedOn: string;
+  total: number;
+  lines: {
+    batchId: string;
+    productId: string;
+    quantity: number;
+    unit: Unit;
+    amount: number;
+    expirationDate: string;
+    lotCode: string;
+  }[];
+}
+
+export interface StockBatch {
+  batchId: string;
+  lotCode: string;
+  quantity: number;
+  entryDate: string;
+  expirationDate: string;
+}
+
+export interface ProductStock {
+  productId: string;
+  name: string;
+  category: Category;
+  unit: Unit;
+  allergens: Allergen[];
+  total: number;
+  batches: StockBatch[];
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -33,12 +98,34 @@ export async function listProducts(baseUrl: string): Promise<Product[]> {
 }
 
 export async function createProduct(baseUrl: string, product: NewProduct): Promise<Product> {
-  const response = await fetch(`${baseUrl}/products`, {
+  return post<Product>(`${baseUrl}/products`, product);
+}
+
+export async function listSuppliers(baseUrl: string): Promise<Supplier[]> {
+  const response = await fetch(`${baseUrl}/suppliers`);
+  return readBody<Supplier[]>(response);
+}
+
+export async function createSupplier(baseUrl: string, supplier: NewSupplier): Promise<Supplier> {
+  return post<Supplier>(`${baseUrl}/suppliers`, supplier);
+}
+
+export async function registerGoodsReceipt(baseUrl: string, receipt: NewGoodsReceipt): Promise<GoodsReceipt> {
+  return post<GoodsReceipt>(`${baseUrl}/goods-receipts`, receipt);
+}
+
+export async function getStock(baseUrl: string): Promise<ProductStock[]> {
+  const response = await fetch(`${baseUrl}/stock`);
+  return readBody<ProductStock[]>(response);
+}
+
+async function post<T>(url: string, body: unknown): Promise<T> {
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(product),
+    body: JSON.stringify(body),
   });
-  return readBody<Product>(response);
+  return readBody<T>(response);
 }
 
 async function readBody<T>(response: Response): Promise<T> {

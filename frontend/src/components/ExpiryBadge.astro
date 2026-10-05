@@ -1,0 +1,22 @@
+---
+import { expiryStatus, type ExpiryLevel } from '../lib/expiry';
+
+interface Props {
+  expirationDate: string;
+  today: string;
+}
+
+const { expirationDate, today } = Astro.props;
+const status = expiryStatus(expirationDate, today);
+
+const STYLES: Record<ExpiryLevel, string> = {
+  expired: 'bg-red-600 text-white',
+  urgent: 'bg-red-100 text-red-800 ring-1 ring-red-200',
+  soon: 'bg-amber-100 text-amber-800 ring-1 ring-amber-200',
+  ok: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200',
+};
+---
+
+<span class:list={['inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', STYLES[status.level]]}>
+  {status.label}
+</span>

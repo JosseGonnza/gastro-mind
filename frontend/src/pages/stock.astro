@@ -1,0 +1,130 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../layouts/Layout.astro';
+import AllergenIcon from '../components/AllergenIcon.astro';
+import ExpiryBadge from '../components/ExpiryBadge.astro';
+import { getStock, type ProductStock } from '../lib/api';
+import { CATEGORY_STYLES } from '../lib/catalog';
+import { expiryStatus, todayIso } from '../lib/expiry';
+import { formatDate, formatMoney, formatQuantity } from '../lib/format';
+
+let stock: ProductStock[] = [];
+let apiDown = false;
+try {
+  stock = await getStock(API_URL);
+} catch {
+  apiDown = true;
+}
+
+const today = todayIso();
+const batchCount = stock.reduce((count, product) => count + product.batches.length, 0);
+const needsAttention = stock
+  .flatMap((product) => product.batches)
+  .filter((batch) => expiryStatus(batch.expirationDate, today).level !== 'ok').length;
+
+const receivedNumber = Astro.url.searchParams.get('albaran');
+const receivedTotal = Number(Astro.url.searchParams.get('total'));
+---
+
+<Layout title="En cámara">
+  <section>
+    <h1 class="text-3xl font-extrabold tracking-tight text-stone-900">Qué hay en cámara</h1>
+    <p class="mt-1 text-stone-500">
+      {
+        apiDown
+          ? 'Sin conexión con la API'
+          : `${stock.length} ${stock.length === 1 ? 'producto' : 'productos'} en ${batchCount} ${batchCount === 1 ? 'lote' : 'lotes'}`
+      }
+      {
+        needsAttention > 0 && (
+          <span class="ml-2 font-semibold text-red-700">
+            · {needsAttention} {needsAttention === 1 ? 'lote caduca' : 'lotes caducan'} en menos de 5 días
+          </span>
+        )
+      }
+    </p>
+  </section>
+
+  {
+    receivedNumber && (
+      <p class="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
+        Albarán {receivedNumber} registrado{Number.isFinite(receivedTotal) && receivedTotal > 0 && ` · ${formatMoney(receivedTotal)}`}.
+      </p>
+    )
+  }
+
+  {
+    apiDown ? (
+      <div class="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-red-200">
+        <p class="text-lg font-bold text-red-700">No se puede conectar con la API</p>
+        <p class="mt-2 text-sm text-stone-500">
+          Comprueba que el backend está arrancado en <code class="rounded bg-stone-100 px-1.5">{API_URL}</code>.
+        </p>
+      </div>
+    ) : stock.length === 0 ? (
+      <div class="mt-8 rounded-2xl border-2 border-dashed border-stone-300 p-10 text-center">
+        <p class="text-lg font-bold text-stone-700">La cámara está vacía</p>
+        <p class="mt-2 text-sm text-stone-500">
+          Registra un <a href="/albaranes/nuevo" class="font-semibold text-brasa-oscura hover:underline">albarán</a> para dar
+          entrada al género.
+        </p>
+      </div>
+    ) : (
+      <section class="mt-8 grid gap-5 lg:grid-cols-2">
+        {stock.map((product) => {
+          const style = CATEGORY_STYLES[product.category];
+          return (
+            <article class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/70">
+              <div class:list={['h-2', style.band]} />
+              <div class="p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <span class:list={['rounded-full px-2.5 py-0.5 text-xs font-semibold', style.chip]}>{style.label}</span>
+                    <h2 class="mt-2 text-lg leading-tight font-bold text-stone-900">{product.name}</h2>
+                    {product.allergens.length > 0 && (
+                      <ul class="mt-2 flex gap-1" aria-label="Alérgenos">
+                        {product.allergens.map((allergen) => (
+                          <li>
+                            <AllergenIcon allergen={allergen} size={20} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <p class="text-right">
+                    <span class="block text-2xl font-extrabold text-stone-900">{formatQuantity(product.total, product.unit)}</span>
+                    <span class="text-xs text-stone-500">en total</span>
+                  </p>
+                </div>
+
+                <table class="mt-4 w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-stone-200 text-left text-xs text-stone-500">
+                      <th class="pb-2 font-semibold">Lote</th>
+                      <th class="pb-2 text-right font-semibold">Cantidad</th>
+                      <th class="pb-2 pl-4 font-semibold">Caducidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {product.batches.map((batch) => (
+                      <tr class="border-b border-dashed border-stone-100 last:border-0">
+                        <td class="py-2 font-mono text-xs text-stone-600">{batch.lotCode}</td>
+                        <td class="py-2 text-right font-semibold text-stone-800">{formatQuantity(batch.quantity, product.unit)}</td>
+                        <td class="py-2 pl-4">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-stone-600">{formatDate(batch.expirationDate)}</span>
+                            <ExpiryBadge expirationDate={batch.expirationDate} today={today} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          );
+        })}
+      </section>
+    )
+  }
+</Layout>

@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,6 +48,16 @@ public class JdbcProductRepository implements ProductRepository {
                    STRING_AGG(a.allergen, ',') AS allergens
             FROM product p
             LEFT JOIN product_allergen a ON a.product_id = p.id
+            GROUP BY p.id, p.name, p.description, p.category, p.unit
+            ORDER BY p.name
+            """;
+
+    private static final String SELECT_BY_IDS = """
+            SELECT p.id, p.name, p.description, p.category, p.unit,
+                   STRING_AGG(a.allergen, ',') AS allergens
+            FROM product p
+            LEFT JOIN product_allergen a ON a.product_id = p.id
+            WHERE p.id = ANY(?)
             GROUP BY p.id, p.name, p.description, p.category, p.unit
             ORDER BY p.name
             """;
@@ -101,6 +112,26 @@ public class JdbcProductRepository implements ProductRepository {
             return products;
         } catch (SQLException e) {
             throw new RepositoryException("Could not list products", e);
+        }
+    }
+
+    @Override
+    public List<Product> findAllById(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SELECT_BY_IDS)) {
+            statement.setArray(1, connection.createArrayOf("uuid", ids.toArray()));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<Product> products = new ArrayList<>();
+                while (resultSet.next()) {
+                    products.add(toProduct(resultSet));
+                }
+                return products;
+            }
+        } catch (SQLException e) {
+            throw new RepositoryException("Could not find products " + ids, e);
         }
     }
 

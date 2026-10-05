@@ -6,7 +6,7 @@ import ExpiryBadge from '../components/ExpiryBadge.astro';
 import { getStock, type ProductStock } from '../lib/api';
 import { CATEGORY_STYLES } from '../lib/catalog';
 import { expiryStatus, todayIso } from '../lib/expiry';
-import { formatDate, formatMoney, formatQuantity } from '../lib/format';
+import { formatDate, formatQuantity } from '../lib/format';
 
 let stock: ProductStock[] = [];
 let apiDown = false;
@@ -22,9 +22,6 @@ const needsAttention = stock
   .flatMap((product) => product.batches)
   .filter((batch) => expiryStatus(batch.expirationDate, today).level !== 'ok').length;
 
-const receivedNumber = Astro.url.searchParams.get('albaran');
-const receivedTotal = Number(Astro.url.searchParams.get('total'));
-
 const kpis = [
   { label: 'Productos en cámara', value: stock.length, alert: false },
   { label: 'Lotes', value: batchCount, alert: false },
@@ -34,14 +31,6 @@ const kpis = [
 
 <Layout title="En cámara" subtitle="Qué hay de cada producto, en qué lotes y cuándo caduca">
   <a slot="actions" href="/albaranes/nuevo" class="btn-primary">+ Nuevo albarán</a>
-
-  {
-    receivedNumber && (
-      <p class="notice-success mb-6">
-        Albarán {receivedNumber} registrado{Number.isFinite(receivedTotal) && receivedTotal > 0 && ` · ${formatMoney(receivedTotal)}`}.
-      </p>
-    )
-  }
 
   {
     apiDown ? (

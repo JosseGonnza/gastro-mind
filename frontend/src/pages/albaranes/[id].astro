@@ -1,0 +1,112 @@
+---
+import { API_URL } from 'astro:env/server';
+import Layout from '../../layouts/Layout.astro';
+import {
+  ApiError,
+  getGoodsReceipt,
+  listProducts,
+  listSuppliers,
+  type GoodsReceipt,
+  type Product,
+  type Supplier,
+} from '../../lib/api';
+import { formatDate, formatMoney, formatQuantity } from '../../lib/format';
+
+const { id = '' } = Astro.params;
+
+let receipt: GoodsReceipt | undefined;
+let suppliers: Supplier[] = [];
+let products: Product[] = [];
+let notFound = false;
+let apiDown = false;
+try {
+  [receipt, suppliers, products] = await Promise.all([
+    getGoodsReceipt(API_URL, id),
+    listSuppliers(API_URL),
+    listProducts(API_URL),
+  ]);
+} catch (e) {
+  //Un id que no es un UUID llega como 400: para quien navega, es igual que no existir
+  if (e instanceof ApiError && (e.status === 404 || e.status === 400)) {
+    notFound = true;
+    Astro.response.status = 404;
+  } else {
+    apiDown = true;
+  }
+}
+
+const productsById = new Map(products.map((product) => [product.id, product]));
+const supplierName = suppliers.find((supplier) => supplier.id === receipt?.supplierId)?.name ?? 'Proveedor desconocido';
+const justRegistered = Astro.url.searchParams.has('registrado');
+const title = receipt ? `Albarán ${receipt.deliveryNoteNumber}` : 'Albarán';
+const subtitle = receipt ? `${supplierName} · recibido el ${formatDate(receipt.receivedOn)}` : undefined;
+---
+
+<Layout title={title} subtitle={subtitle}>
+  <a slot="actions" href="/albaranes" class="btn-secondary">← Albaranes</a>
+
+  {
+    apiDown ? (
+      <div class="panel p-8 text-center">
+        <p class="font-semibold text-red-700">No se puede conectar con la API</p>
+        <p class="mt-1 text-sm text-stone-500">
+          Comprueba que el backend está arrancado en <code class="rounded bg-stone-100 px-1.5">{API_URL}</code>.
+        </p>
+      </div>
+    ) : notFound || !receipt ? (
+      <div class="panel p-10 text-center">
+        <p class="font-semibold text-stone-700">Este albarán no existe</p>
+        <p class="mt-1 text-sm text-stone-500">
+          Puede que el enlace esté mal.{' '}
+          <a href="/albaranes" class="font-semibold text-brasa-oscura hover:underline">
+            Ver todos los albaranes
+          </a>
+        </p>
+      </div>
+    ) : (
+      <>
+        {justRegistered && (
+          <p class="notice-success mb-6">
+            Albarán registrado: {receipt.lines.length} {receipt.lines.length === 1 ? 'lote nuevo' : 'lotes nuevos'} en cámara.{' '}
+            <a href="/stock" class="underline">
+              Ver la cámara
+            </a>
+          </p>
+        )}
+
+        <div class="panel overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Lote</th>
+                <th class="num">Cantidad</th>
+                <th>Caducidad</th>
+                <th class="num">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {receipt.lines.map((line) => (
+                <tr>
+                  <td class="font-semibold text-stone-900">{productsById.get(line.productId)?.name ?? 'Producto desconocido'}</td>
+                  <td class="font-mono text-xs text-stone-600">{line.lotCode}</td>
+                  <td class="num text-stone-700">{formatQuantity(line.quantity, line.unit)}</td>
+                  <td class="whitespace-nowrap text-stone-600">{formatDate(line.expirationDate)}</td>
+                  <td class="num text-stone-900">{formatMoney(line.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr class="border-t border-stone-200 bg-stone-50 text-sm">
+                <td colspan="4" class="px-4 py-2.5 text-stone-500">
+                  {receipt.lines.length} {receipt.lines.length === 1 ? 'línea' : 'líneas'}
+                </td>
+                <td class="num px-4 py-2.5 font-bold text-stone-900">{formatMoney(receipt.total)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </>
+    )
+  }
+</Layout>

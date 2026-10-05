@@ -34,7 +34,7 @@ if (Astro.request.method === 'POST' && !apiDown) {
   if (errors.length === 0) {
     try {
       const receipt = await registerGoodsReceipt(API_URL, { supplierId, deliveryNoteNumber, lines: result.lines });
-      return Astro.redirect(`/stock?albaran=${encodeURIComponent(receipt.deliveryNoteNumber)}&total=${receipt.total}`);
+      return Astro.redirect(`/albaranes/${receipt.id}?registrado`);
     } catch (e) {
       errors = [
         e instanceof ApiError
@@ -51,7 +51,7 @@ const ready = !apiDown && suppliers.length > 0 && products.length > 0;
 ---
 
 <Layout title="Nuevo albarán" subtitle="Da entrada al género que acaba de llegar: cada línea se convierte en un lote">
-  <a slot="actions" href="/stock" class="btn-secondary">← Volver a cámara</a>
+  <a slot="actions" href="/albaranes" class="btn-secondary">← Albaranes</a>
 
   {
     errors.length > 0 && (
@@ -137,7 +137,7 @@ const ready = !apiDown && suppliers.length > 0 && products.length > 0;
 
         <div class="flex gap-2 border-t border-stone-200 bg-stone-50 px-6 py-4">
           <button type="submit" class="btn-primary">Registrar albarán</button>
-          <a href="/stock" class="btn-secondary">Cancelar</a>
+          <a href="/albaranes" class="btn-secondary">Cancelar</a>
         </div>
       </form>
     )

@@ -2,6 +2,8 @@ package com.gastromind.infrastructure.persistence;
 
 import com.gastromind.application.receipt.DuplicateDeliveryNoteException;
 import com.gastromind.application.receipt.GoodsReceiptRepository;
+import com.gastromind.application.receipt.GoodsReceiptSummary;
+import com.gastromind.application.receipt.ReceiptFilter;
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.GoodsReceipt;
 import com.gastromind.domain.valueobject.ReceivedGoods;
@@ -48,6 +50,19 @@ public class JdbcGoodsReceiptRepository implements GoodsReceiptRepository {
                 FROM goods_receipt
                 WHERE supplier_id = ? AND delivery_note_number = ?
             )
+            """;
+
+    private static final String SELECT_SUMMARIES = """
+            SELECT r.id, r.supplier_id, s.name AS supplier_name, r.delivery_note_number, r.received_on,
+                   COUNT(b.id) AS line_count, SUM(b.purchase_price) AS total
+            FROM goods_receipt r
+            JOIN supplier s ON s.id = r.supplier_id
+            JOIN batch b ON b.goods_receipt_id = r.id
+            WHERE (CAST(? AS UUID) IS NULL OR r.supplier_id = ?)
+              AND (CAST(? AS DATE) IS NULL OR r.received_on >= ?)
+              AND (CAST(? AS DATE) IS NULL OR r.received_on <= ?)
+            GROUP BY r.id, s.id
+            ORDER BY r.received_on DESC, r.delivery_note_number DESC
             """;
 
     private static final String UNIQUE_VIOLATION = "23505";
@@ -113,6 +128,35 @@ public class JdbcGoodsReceiptRepository implements GoodsReceiptRepository {
             }
         } catch (SQLException e) {
             throw new RepositoryException("Could not check delivery note " + deliveryNoteNumber, e);
+        }
+    }
+
+    @Override
+    public List<GoodsReceiptSummary> findSummaries(ReceiptFilter filter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SELECT_SUMMARIES)) {
+            statement.setObject(1, filter.supplierId());
+            statement.setObject(2, filter.supplierId());
+            statement.setObject(3, filter.from());
+            statement.setObject(4, filter.from());
+            statement.setObject(5, filter.to());
+            statement.setObject(6, filter.to());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<GoodsReceiptSummary> summaries = new ArrayList<>();
+                while (resultSet.next()) {
+                    summaries.add(new GoodsReceiptSummary(
+                            resultSet.getObject("id", UUID.class),
+                            resultSet.getObject("supplier_id", UUID.class),
+                            resultSet.getString("supplier_name"),
+                            resultSet.getString("delivery_note_number"),
+                            resultSet.getObject("received_on", LocalDate.class),
+                            resultSet.getInt("line_count"),
+                            resultSet.getBigDecimal("total")));
+                }
+                return summaries;
+            }
+        } catch (SQLException e) {
+            throw new RepositoryException("Could not list goods receipts", e);
         }
     }
 

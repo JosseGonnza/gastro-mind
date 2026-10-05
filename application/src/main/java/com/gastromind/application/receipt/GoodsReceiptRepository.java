@@ -3,6 +3,7 @@ package com.gastromind.application.receipt;
 import com.gastromind.domain.entity.GoodsReceipt;
 import com.gastromind.domain.valueobject.ReceivedGoods;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,6 @@ public interface GoodsReceiptRepository {
     Optional<GoodsReceipt> findById(UUID id);
 
     boolean existsBySupplierAndDeliveryNoteNumber(UUID supplierId, String deliveryNoteNumber);
+
+    List<GoodsReceiptSummary> findSummaries(ReceiptFilter filter);
 }

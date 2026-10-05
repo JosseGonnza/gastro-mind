@@ -218,7 +218,7 @@ class CostingServiceTest {
         @Test
         @DisplayName("calcular el coste con precios estables")
         void shouldCalculateRecipeCostWithStablePrices() {
-            Recipe recipe = Recipe.create("Arroz con pollo", "Receta sencilla", 4);
+            Recipe recipe = Recipe.create("Arroz con pollo", "Receta sencilla", 4, null);
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
             List<Batch> batches = List.of(
@@ -234,7 +234,7 @@ class CostingServiceTest {
         @Test
         @DisplayName("calcular el coste con diferentes precios entre lotes")
         void shouldCalculateRecipeCostWithDifferentPricesBetweenBatches() {
-            Recipe recipe = Recipe.create("Paella Valenciana", "Para muchas personas", 8);
+            Recipe recipe = Recipe.create("Paella Valenciana", "Para muchas personas", 8, null);
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(3.0, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
             List<Batch> batches = List.of(
@@ -251,7 +251,7 @@ class CostingServiceTest {
         @Test
         @DisplayName("calcular coste de receta con múltiples ingredientes")
         void shouldCalculateRecipeCostWithMultipleIngredients() {
-            Recipe recipe = Recipe.create("Paella Valenciana", "Receta tradicional", 4);
+            Recipe recipe = Recipe.create("Paella Valenciana", "Receta tradicional", 4, null);
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(0.4, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.2, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(tomato, Quantity.of(0.1, UnitOfMeasure.KILOGRAM)));
@@ -269,7 +269,7 @@ class CostingServiceTest {
         @Test
         @DisplayName("lanzar excepción si falta el producto de algún ingrediente")
         void shouldThrowExceptionWhenAProductIsMissing() {
-            Recipe recipe = Recipe.create("Arroz con pollo", "Receta sencilla", 4);
+            Recipe recipe = Recipe.create("Arroz con pollo", "Receta sencilla", 4, null);
             recipe.addIngredient(RecipeIngredient.of(rice, Quantity.of(1, UnitOfMeasure.KILOGRAM)));
             recipe.addIngredient(RecipeIngredient.of(chicken, Quantity.of(0.5, UnitOfMeasure.KILOGRAM)));
             List<Batch> batches = List.of(

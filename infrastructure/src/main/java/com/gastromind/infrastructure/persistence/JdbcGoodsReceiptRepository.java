@@ -1,5 +1,6 @@
 package com.gastromind.infrastructure.persistence;
 
+import com.gastromind.application.receipt.DuplicateDeliveryNoteException;
 import com.gastromind.application.receipt.GoodsReceiptRepository;
 import com.gastromind.domain.entity.Batch;
 import com.gastromind.domain.entity.GoodsReceipt;
@@ -48,6 +49,8 @@ public class JdbcGoodsReceiptRepository implements GoodsReceiptRepository {
                 WHERE supplier_id = ? AND delivery_note_number = ?
             )
             """;
+
+    private static final String UNIQUE_VIOLATION = "23505";
 
     private final DataSource dataSource;
 
@@ -120,6 +123,12 @@ public class JdbcGoodsReceiptRepository implements GoodsReceiptRepository {
             statement.setString(3, receipt.getDeliveryNoteNumber());
             statement.setObject(4, receipt.getReceivedOn());
             statement.executeUpdate();
+        } catch (SQLException e) {
+            //23505 = clave única repetida; el id es un UUID nuevo, así que solo puede ser proveedor + número de albarán
+            if (UNIQUE_VIOLATION.equals(e.getSQLState())) {
+                throw new DuplicateDeliveryNoteException(receipt.getDeliveryNoteNumber());
+            }
+            throw e;
         }
     }
 
